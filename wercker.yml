@@ -8,6 +8,6 @@ build:
   - glide-install
 
   - script:
-      name: unit tests
+      name: go test
       code: |
         go test -v ./internal/... ./test/acceptance
