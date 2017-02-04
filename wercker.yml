@@ -1,0 +1,13 @@
+box: golang
+
+build:
+  steps:
+  - setup-go-workspace:
+      package-dir: github.com/ooesili/aurgo
+
+  - glide-install
+
+  - script:
+      name: unit tests
+      code: |
+        go test -v ./internal/... ./test/acceptance
