@@ -1,0 +1,5 @@
+package: github.com/ooesili/aurgo
+import: []
+testImport:
+- package: github.com/onsi/ginkgo
+- package: github.com/onsi/gomega

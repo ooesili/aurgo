@@ -1,0 +1,33 @@
+{
+  "version": 5,
+  "type": "multiinfo",
+  "resultcount": 1,
+  "results": [
+    {
+      "ID": 358323,
+      "Name": "xcape",
+      "PackageBaseID": 87529,
+      "PackageBase": "xcape",
+      "Version": "1.2-1",
+      "Description": "Configure modifier keys to act as other keys when pressed and released on their own",
+      "URL": "https://github.com/alols/xcape",
+      "NumVotes": 18,
+      "Popularity": 0.411215,
+      "OutOfDate": null,
+      "Maintainer": "qwence",
+      "FirstSubmitted": 1416427962,
+      "LastModified": 1479698105,
+      "URLPath": "/cgit/aur.git/snapshot/xcape.tar.gz",
+      "Depends": [
+        "libxtst"
+      ],
+      "Conflicts": [
+        "xcape-git"
+      ],
+      "License": [
+        "GPL3"
+      ],
+      "Keywords": []
+    }
+  ]
+}
