@@ -6,6 +6,7 @@ import (
 
 	"github.com/ooesili/aurgo/internal/aur"
 	"github.com/ooesili/aurgo/internal/aurgo"
+	"github.com/ooesili/aurgo/internal/cache"
 	"github.com/ooesili/aurgo/internal/config"
 	"github.com/ooesili/aurgo/internal/git"
 )
@@ -36,9 +37,10 @@ func sync() error {
 	}
 
 	git := git.New()
-	aurgo := aurgo.New(config, git)
+	cache := cache.New(config, git)
+	aurgo := aurgo.New(config, cache)
 
-	err = aurgo.Sync()
+	err = aurgo.SyncAll()
 	if err != nil {
 		return err
 	}

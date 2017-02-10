@@ -11,46 +11,35 @@ import (
 )
 
 var _ = Describe("Aurgo", func() {
-	Describe("Sync", func() {
+	Describe("SyncAll", func() {
 		var (
 			aurgo  Aurgo
 			config *mocks.Config
-			git    *mocks.Git
+			cache  *mocks.Cache
 			err    error
 		)
 
 		BeforeEach(func() {
 			config = &mocks.Config{}
-			git = &mocks.Git{}
+			cache = &mocks.Cache{}
 		})
 
 		JustBeforeEach(func() {
-			aurgo = New(config, git)
-			err = aurgo.Sync()
+			aurgo = New(config, cache)
+			err = aurgo.SyncAll()
 		})
 
 		Context("when all dependencies succeed", func() {
 			BeforeEach(func() {
-				config.PackagesCall.Returns.Packages = []string{"package1"}
-				config.SourcePathCall.Returns.Path = "/path/to/package1"
-				config.AurRepoURLCall.Returns.URL = "https://example.com/package1.git"
+				config.PackagesCall.Returns.Packages = []string{"dopepkg"}
 			})
 
 			It("succeeds", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("looks up the source path to each package", func() {
-				Expect(config.SourcePathCall.Received.Package).To(Equal("package1"))
-			})
-
-			It("looks up the aur repo URL to each package", func() {
-				Expect(config.AurRepoURLCall.Received.Package).To(Equal("package1"))
-			})
-
-			It("clones the git repo from the AUR", func() {
-				Expect(git.CloneCall.Received.Path).To(Equal("/path/to/package1"))
-				Expect(git.CloneCall.Received.URL).To(Equal("https://example.com/package1.git"))
+			It("syncs the package in the cache", func() {
+				Expect(cache.SyncCall.Received.Package).To(Equal("dopepkg"))
 			})
 		})
 
@@ -64,23 +53,10 @@ var _ = Describe("Aurgo", func() {
 			})
 		})
 
-		Context("when looking up the source path for a package fails", func() {
+		Context("when syncing a package fails", func() {
 			BeforeEach(func() {
-				config.PackagesCall.Returns.Packages = []string{"package1"}
-				config.SourcePathCall.Returns.Err = errors.New("dang")
-			})
-
-			It("returns an error", func() {
-				Expect(err).To(HaveOccurred())
-			})
-		})
-
-		Context("when cloning a package fails", func() {
-			BeforeEach(func() {
-				config.PackagesCall.Returns.Packages = []string{"package1"}
-				config.SourcePathCall.Returns.Path = "/path/to/package1"
-				config.AurRepoURLCall.Returns.URL = "https://example.com/package1.git"
-				git.CloneCall.Returns.Err = errors.New("dang")
+				config.PackagesCall.Returns.Packages = []string{"dopepkg"}
+				cache.SyncCall.Returns.Err = errors.New("dang")
 			})
 
 			It("returns an error", func() {

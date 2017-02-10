@@ -2,52 +2,35 @@ package aurgo
 
 type Config interface {
 	Packages() ([]string, error)
-	AurRepoURL(pkg string) string
-	SourcePath(pkg string) (string, error)
 }
 
-type Git interface {
-	Clone(url, pkg string) error
+type Cache interface {
+	Sync(pkg string) error
 }
 
-func New(config Config, git Git) Aurgo {
+func New(config Config, cache Cache) Aurgo {
 	return Aurgo{
 		config: config,
-		git:    git,
+		cache:  cache,
 	}
 }
 
 type Aurgo struct {
 	config Config
-	git    Git
+	cache  Cache
 }
 
-func (a Aurgo) Sync() error {
+func (a Aurgo) SyncAll() error {
 	pkgs, err := a.config.Packages()
 	if err != nil {
 		return err
 	}
 
 	for _, pkg := range pkgs {
-		err := a.syncPackage(pkg)
+		err := a.cache.Sync(pkg)
 		if err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (a Aurgo) syncPackage(pkg string) error {
-	sourcePath, err := a.config.SourcePath(pkg)
-	if err != nil {
-		return err
-	}
-	aurURL := a.config.AurRepoURL(pkg)
-
-	err = a.git.Clone(aurURL, sourcePath)
-	if err != nil {
-		return err
 	}
 
 	return nil
