@@ -3,12 +3,15 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/ooesili/aurgo/internal/aur"
 	"github.com/ooesili/aurgo/internal/aurgo"
 	"github.com/ooesili/aurgo/internal/cache"
 	"github.com/ooesili/aurgo/internal/config"
 	"github.com/ooesili/aurgo/internal/git"
+	"github.com/ooesili/aurgo/internal/pacman"
+	"github.com/ooesili/aurgo/internal/srcinfo"
 )
 
 func main() {
@@ -30,15 +33,10 @@ func realMain() error {
 }
 
 func sync() error {
-	repoPath := os.Getenv("AURGOPATH")
-	config, err := config.New(repoPath)
+	aurgo, err := buildAurgo()
 	if err != nil {
 		return err
 	}
-
-	git := git.New()
-	cache := cache.New(config, git)
-	aurgo := aurgo.New(config, cache)
 
 	err = aurgo.SyncAll()
 	if err != nil {
@@ -46,6 +44,32 @@ func sync() error {
 	}
 
 	return nil
+}
+
+func buildAurgo() (aurgo.Aurgo, error) {
+	repoPath := os.Getenv("AURGOPATH")
+	config, err := config.New(repoPath)
+	if err != nil {
+		return aurgo.Aurgo{}, err
+	}
+
+	executor := pacman.NewOsExecutor()
+	pacman, err := pacman.New(executor)
+	if err != nil {
+		return aurgo.Aurgo{}, err
+	}
+
+	arch, err := srcinfo.ArchString(runtime.GOARCH)
+	if err != nil {
+		return aurgo.Aurgo{}, err
+	}
+	srcinfo := srcinfo.New(arch)
+
+	git := git.New()
+	cache := cache.New(config, git, srcinfo)
+	aurgo := aurgo.New(config, cache, pacman)
+
+	return aurgo, nil
 }
 
 func info(packageName string) error {

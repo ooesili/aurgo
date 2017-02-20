@@ -1,5 +1,10 @@
 package cache
 
+import (
+	"io/ioutil"
+	"path/filepath"
+)
+
 type Git interface {
 	Clone(url, pkg string) error
 }
@@ -9,16 +14,28 @@ type Config interface {
 	AurRepoURL(string) string
 }
 
-func New(config Config, git Git) Cache {
+type SrcInfo interface {
+	Parse(input []byte) (Package, error)
+}
+
+type Package struct {
+	Depends      []string
+	Checkdepends []string
+	Makedepends  []string
+}
+
+func New(config Config, git Git, srcinfo SrcInfo) Cache {
 	return Cache{
-		config: config,
-		git:    git,
+		config:  config,
+		git:     git,
+		srcinfo: srcinfo,
 	}
 }
 
 type Cache struct {
-	config Config
-	git    Git
+	config  Config
+	git     Git
+	srcinfo SrcInfo
 }
 
 func (c Cache) Sync(pkg string) error {
@@ -34,4 +51,38 @@ func (c Cache) Sync(pkg string) error {
 	}
 
 	return nil
+}
+
+func (c Cache) GetDeps(pkgname string) ([]string, error) {
+	sourcePath, err := c.config.SourcePath(pkgname)
+	if err != nil {
+		return nil, err
+	}
+
+	srcinfoPath := filepath.Join(sourcePath, ".SRCINFO")
+	srcinfoBytes, err := ioutil.ReadFile(srcinfoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	pkg, err := c.srcinfo.Parse(srcinfoBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	deps := aggregateDeps(pkg)
+	return deps, nil
+}
+
+func aggregateDeps(pkg Package) []string {
+	var allDeps []string
+
+	depLists := [][]string{pkg.Depends, pkg.Makedepends, pkg.Checkdepends}
+	for _, depList := range depLists {
+		for _, dep := range depList {
+			allDeps = append(allDeps, dep)
+		}
+	}
+
+	return allDeps
 }
