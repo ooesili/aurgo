@@ -2,17 +2,24 @@ package git
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/pkg/exec"
 )
 
-func New() Git {
-	return Git{}
+func New(stdout, stderr io.Writer) Git {
+	return Git{
+		stdout: stdout,
+		stderr: stderr,
+	}
 }
 
-type Git struct{}
+type Git struct {
+	stdout io.Writer
+	stderr io.Writer
+}
 
 func (g Git) Clone(url, path string) error {
 	if isGitRepo(path) {
@@ -20,7 +27,10 @@ func (g Git) Clone(url, path string) error {
 	}
 
 	cmd := exec.Command("git", "clone", url, path)
-	err := cmd.Run()
+	err := cmd.Run(
+		exec.Stdout(g.stdout),
+		exec.Stderr(g.stderr),
+	)
 	if err != nil {
 		return fmt.Errorf("git clone failed: %s", err)
 	}

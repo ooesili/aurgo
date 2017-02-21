@@ -10,6 +10,7 @@ import (
 	"github.com/ooesili/aurgo/internal/cache"
 	"github.com/ooesili/aurgo/internal/config"
 	"github.com/ooesili/aurgo/internal/git"
+	"github.com/ooesili/aurgo/internal/logging"
 	"github.com/ooesili/aurgo/internal/pacman"
 	"github.com/ooesili/aurgo/internal/srcinfo"
 )
@@ -65,8 +66,15 @@ func buildAurgo() (aurgo.Aurgo, error) {
 	}
 	srcinfo := srcinfo.New(arch)
 
-	git := git.New()
-	cache := cache.New(config, git, srcinfo)
+	git := git.New(
+		os.Stdout,
+		os.Stderr,
+	)
+	cache := logging.NewCache(
+		cache.New(config, git, srcinfo),
+		os.Stdout,
+	)
+
 	aurgo := aurgo.New(config, cache, pacman)
 
 	return aurgo, nil

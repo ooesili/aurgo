@@ -40,7 +40,7 @@ var _ = Describe("Git", func() {
 			destRepo = filepath.Join(tempDir, "dest")
 			Expect(os.Mkdir(destRepo, 0755)).To(Succeed())
 
-			git = New()
+			git = New(GinkgoWriter, GinkgoWriter)
 		})
 
 		AfterEach(func() {
