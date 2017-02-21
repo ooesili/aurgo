@@ -23,19 +23,37 @@ type Git struct {
 
 func (g Git) Clone(url, path string) error {
 	if isGitRepo(path) {
+		err := g.execPull(path)
+		if err != nil {
+			return fmt.Errorf("git pull failed: %s", err)
+		}
+
 		return nil
 	}
 
-	cmd := exec.Command("git", "clone", url, path)
-	err := cmd.Run(
-		exec.Stdout(g.stdout),
-		exec.Stderr(g.stderr),
-	)
+	err := g.execClone(url, path)
 	if err != nil {
 		return fmt.Errorf("git clone failed: %s", err)
 	}
 
 	return nil
+}
+
+func (g Git) execClone(url, path string) error {
+	cmd := exec.Command("git", "clone", url, path)
+	return cmd.Run(
+		exec.Stdout(g.stdout),
+		exec.Stderr(g.stderr),
+	)
+}
+
+func (g Git) execPull(path string) error {
+	cmd := exec.Command("git", "pull")
+	return cmd.Run(
+		exec.Stdout(g.stdout),
+		exec.Stderr(g.stderr),
+		exec.Dir(path),
+	)
 }
 
 func isGitRepo(path string) bool {

@@ -25,16 +25,7 @@ var _ = Describe("Git", func() {
 			tempDir, err = ioutil.TempDir("", "aurgo-git-test-")
 			Expect(err).ToNot(HaveOccurred())
 
-			repoTar, err := filepath.Abs("fixtures/repo.tar.gz")
-			Expect(err).ToNot(HaveOccurred())
-
-			untarCmd := exec.Command("tar", "xzf", repoTar)
-			err = untarCmd.Run(
-				exec.Dir(tempDir),
-				exec.Stdout(GinkgoWriter),
-				exec.Stderr(GinkgoWriter),
-			)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(untarFixture("repo.tar.gz", tempDir)).To(Succeed())
 
 			sourceRepo = filepath.Join(tempDir, "repo")
 			destRepo = filepath.Join(tempDir, "dest")
@@ -47,29 +38,66 @@ var _ = Describe("Git", func() {
 			os.RemoveAll(tempDir)
 		})
 
-		It("can clone a repo", func() {
-			err := git.Clone(sourceRepo, destRepo)
-			Expect(err).ToNot(HaveOccurred())
-
-			helloPath := filepath.Join(destRepo, "hello")
-			Expect(helloPath).To(BeARegularFile())
-		})
-
-		It("can be run against an existing repo", func() {
-			err := git.Clone(sourceRepo, destRepo)
-			Expect(err).ToNot(HaveOccurred())
-
-			err = git.Clone(sourceRepo, destRepo)
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		Context("when the repo cannot be cloned", func() {
-			It("returns an error", func() {
-				Expect(os.RemoveAll(sourceRepo)).To(Succeed())
+		Describe("cloning a new repo", func() {
+			It("can clone a repo", func() {
 				err := git.Clone(sourceRepo, destRepo)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(HavePrefix("git clone failed: "))
+				Expect(err).ToNot(HaveOccurred())
+
+				helloPath := filepath.Join(destRepo, "hello")
+				Expect(helloPath).To(BeARegularFile())
+			})
+
+			Context("when the source repo can not be found", func() {
+				It("returns an error", func() {
+					Expect(os.RemoveAll(sourceRepo)).To(Succeed())
+					err := git.Clone(sourceRepo, destRepo)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(HavePrefix("git clone failed: "))
+				})
+			})
+		})
+
+		Describe("updating an existing repo", func() {
+			It("pulls changes when the repo already exists", func() {
+				err := git.Clone(sourceRepo, destRepo)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(os.RemoveAll(sourceRepo)).To(Succeed())
+				Expect(untarFixture("repo-updated.tar.gz", tempDir)).To(Succeed())
+
+				err = git.Clone(sourceRepo, destRepo)
+				Expect(err).ToNot(HaveOccurred())
+
+				hiPath := filepath.Join(destRepo, "hi")
+				Expect(hiPath).To(BeARegularFile())
+			})
+
+			Context("when the source repo cannot be found", func() {
+				It("pulls changes when the repo already exists", func() {
+					err := git.Clone(sourceRepo, destRepo)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(os.RemoveAll(sourceRepo)).To(Succeed())
+
+					err = git.Clone(sourceRepo, destRepo)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(HavePrefix("git pull failed: "))
+				})
 			})
 		})
 	})
 })
+
+func untarFixture(tarName, destDir string) error {
+	repoTar, err := filepath.Abs(filepath.Join("fixtures", tarName))
+	if err != nil {
+		return err
+	}
+
+	untarCmd := exec.Command("tar", "xzf", repoTar)
+	return untarCmd.Run(
+		exec.Dir(destDir),
+		exec.Stdout(GinkgoWriter),
+		exec.Stderr(GinkgoWriter),
+	)
+}
