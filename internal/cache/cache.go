@@ -2,7 +2,9 @@ package cache
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
+	"sort"
 )
 
 type Git interface {
@@ -12,6 +14,7 @@ type Git interface {
 type Config interface {
 	SourcePath(pkg string) (string, error)
 	AurRepoURL(string) string
+	SourceBase() string
 }
 
 type SrcInfo interface {
@@ -85,4 +88,36 @@ func aggregateDeps(pkg Package) []string {
 	}
 
 	return allDeps
+}
+
+func (c Cache) ListExisting() ([]string, error) {
+	sourceBase := c.config.SourceBase()
+
+	files, err := ioutil.ReadDir(sourceBase)
+	if err != nil {
+		return nil, err
+	}
+
+	var pkgs []string
+
+	for _, file := range files {
+		pkgs = append(pkgs, file.Name())
+	}
+
+	sort.Strings(pkgs)
+	return pkgs, nil
+}
+
+func (c Cache) Remove(pkg string) error {
+	sourcePath, err := c.config.SourcePath(pkg)
+	if err != nil {
+		return err
+	}
+
+	err = os.RemoveAll(sourcePath)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

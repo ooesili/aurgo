@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 
+	"github.com/ooesili/aurgo/internal/aurgo"
 	. "github.com/ooesili/aurgo/internal/logging"
 
 	. "github.com/onsi/ginkgo"
@@ -23,40 +24,17 @@ var _ = Describe("Cache", func() {
 		cache = NewCache(realCache, out)
 	})
 
-	Describe("GetDeps", func() {
-		var (
-			pkgs []string
-			err  error
-		)
-
-		BeforeEach(func() {
-			realCache.GetDepsCall.Returns.Pkgs = []string{"pkg1", "pkg2"}
-			realCache.GetDepsCall.Returns.Err = errors.New("shoot")
-
-			pkgs, err = cache.GetDeps("somepkg")
-		})
-
-		It("forwards its arguments to the real cache", func() {
-			Expect(realCache.GetDepsCall.Received.Pkg).To(Equal("somepkg"))
-		})
-
-		It("forwards the return values back to the caller", func() {
-			Expect(pkgs).To(Equal([]string{"pkg1", "pkg2"}))
-			Expect(err).To(MatchError("shoot"))
-		})
-	})
-
 	Describe("Sync", func() {
 		var err error
 
 		BeforeEach(func() {
 			realCache.SyncCall.Returns.Err = errors.New("darn")
 
-			err = cache.Sync("otherpkg")
+			err = cache.Sync("dopepkg")
 		})
 
 		It("forwards its arguments to the real cache", func() {
-			Expect(realCache.SyncCall.Received.Pkg).To(Equal("otherpkg"))
+			Expect(realCache.SyncCall.Received.Pkg).To(Equal("dopepkg"))
 		})
 
 		It("forwards the return values back to the caller", func() {
@@ -64,22 +42,37 @@ var _ = Describe("Cache", func() {
 		})
 
 		It("logs the package its about to sync", func() {
-			expectedMessage := "---> syncing package: otherpkg\n"
+			expectedMessage := "---> syncing package: dopepkg\n"
+			Expect(out.String()).To(Equal(expectedMessage))
+		})
+	})
+
+	Describe("Remove", func() {
+		var err error
+
+		BeforeEach(func() {
+			realCache.RemoveCall.Returns.Err = errors.New("darn")
+
+			err = cache.Remove("somepkg")
+		})
+
+		It("forwards the arguments to the real cache", func() {
+			Expect(realCache.RemoveCall.Received.Pkg).To(Equal("somepkg"))
+		})
+
+		It("forwards the return values back to the caller", func() {
+			Expect(err).To(MatchError("darn"))
+		})
+
+		It("logs the package its about to remove", func() {
+			expectedMessage := "---> removing package: somepkg\n"
 			Expect(out.String()).To(Equal(expectedMessage))
 		})
 	})
 })
 
 type MockCache struct {
-	GetDepsCall struct {
-		Received struct {
-			Pkg string
-		}
-		Returns struct {
-			Pkgs []string
-			Err  error
-		}
-	}
+	aurgo.Cache
 
 	SyncCall struct {
 		Received struct {
@@ -89,15 +82,23 @@ type MockCache struct {
 			Err error
 		}
 	}
-}
 
-func (c *MockCache) GetDeps(pkg string) ([]string, error) {
-	c.GetDepsCall.Received.Pkg = pkg
-	returns := c.GetDepsCall.Returns
-	return returns.Pkgs, returns.Err
+	RemoveCall struct {
+		Received struct {
+			Pkg string
+		}
+		Returns struct {
+			Err error
+		}
+	}
 }
 
 func (c *MockCache) Sync(pkg string) error {
 	c.SyncCall.Received.Pkg = pkg
 	return c.SyncCall.Returns.Err
+}
+
+func (c *MockCache) Remove(pkg string) error {
+	c.RemoveCall.Received.Pkg = pkg
+	return c.RemoveCall.Returns.Err
 }

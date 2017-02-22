@@ -11,6 +11,8 @@ type Config interface {
 type Cache interface {
 	Sync(pkg string) error
 	GetDeps(pkg string) ([]string, error)
+	ListExisting() ([]string, error)
+	Remove(pkg string) error
 }
 
 type Pacman interface {
@@ -61,17 +63,41 @@ func (a Aurgo) SyncAll() error {
 		}
 	}
 
+	err = a.removeOldPackages(pkgList)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a Aurgo) removeOldPackages(pkgList *pkgList) error {
+	existingPkgs, err := a.cache.ListExisting()
+	if err != nil {
+		return err
+	}
+
+	for _, existingPkg := range existingPkgs {
+		if !pkgList.wasProcessed(existingPkg) {
+			err := a.cache.Remove(existingPkg)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
 func newPkgList(initialPkgs, availablePackages []string) *pkgList {
 	pkgList := &pkgList{
+		available:   make(map[string]bool),
 		unprocessed: make(map[string]bool),
 		processed:   make(map[string]bool),
 	}
 
 	for _, pkg := range availablePackages {
-		pkgList.processed[pkg] = true
+		pkgList.available[pkg] = true
 	}
 
 	for _, pkg := range initialPkgs {
@@ -82,6 +108,7 @@ func newPkgList(initialPkgs, availablePackages []string) *pkgList {
 }
 
 type pkgList struct {
+	available   map[string]bool
 	processed   map[string]bool
 	unprocessed map[string]bool
 }
@@ -100,7 +127,7 @@ func (p *pkgList) nextBatch() []string {
 }
 
 func (p *pkgList) queueForNextBatch(pkg string) {
-	if p.processed[pkg] {
+	if p.available[pkg] || p.processed[pkg] {
 		return
 	}
 
@@ -109,4 +136,8 @@ func (p *pkgList) queueForNextBatch(pkg string) {
 
 func (p *pkgList) allProcessed() bool {
 	return len(p.unprocessed) == 0
+}
+
+func (p *pkgList) wasProcessed(pkg string) bool {
+	return p.processed[pkg]
 }

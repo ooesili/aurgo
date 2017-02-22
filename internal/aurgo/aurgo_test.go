@@ -37,6 +37,7 @@ var _ = Describe("Aurgo", func() {
 					"dopepkg": {},
 				}
 				config.PackagesCall.Returns.Packages = []string{"dopepkg"}
+				cache.ListExistingCall.Returns.Packages = []string{"dopepkg"}
 			})
 
 			It("succeeds", func() {
@@ -55,6 +56,7 @@ var _ = Describe("Aurgo", func() {
 					"libdope": {},
 				}
 				config.PackagesCall.Returns.Packages = []string{"dopepkg"}
+				cache.ListExistingCall.Returns.Packages = []string{"dopepkg", "libdope"}
 			})
 
 			It("syncs the dependencies", func() {
@@ -72,6 +74,9 @@ var _ = Describe("Aurgo", func() {
 					"leftpad": {},
 				}
 				config.PackagesCall.Returns.Packages = []string{"dopepkg"}
+				cache.ListExistingCall.Returns.Packages = []string{
+					"dopepkg", "libdope", "leftpad",
+				}
 			})
 
 			It("syncs the all dependencies", func() {
@@ -90,6 +95,9 @@ var _ = Describe("Aurgo", func() {
 					"leftpad": {},
 				}
 				config.PackagesCall.Returns.Packages = []string{"dopepkg"}
+				cache.ListExistingCall.Returns.Packages = []string{
+					"dopepkg", "libdope", "leftpad", "libcool",
+				}
 			})
 
 			It("syncs each dependency exactly once", func() {
@@ -107,6 +115,9 @@ var _ = Describe("Aurgo", func() {
 					"leftpad": {},
 				}
 				config.PackagesCall.Returns.Packages = []string{"dopepkg", "leftpad"}
+				cache.ListExistingCall.Returns.Packages = []string{
+					"dopepkg", "libdope", "leftpad",
+				}
 			})
 
 			It("syncs each dependency exactly once", func() {
@@ -125,6 +136,9 @@ var _ = Describe("Aurgo", func() {
 				}
 				config.PackagesCall.Returns.Packages = []string{"dopepkg"}
 				pacman.ListAvailableCall.Returns.Packages = []string{"libcool", "openssl"}
+				cache.ListExistingCall.Returns.Packages = []string{
+					"dopepkg", "libdope", "leftpad",
+				}
 			})
 
 			It("skips those packages", func() {
@@ -133,6 +147,61 @@ var _ = Describe("Aurgo", func() {
 					"libdope",
 					"leftpad",
 				))
+			})
+		})
+
+		Context("when existing packages are no longer needed", func() {
+			BeforeEach(func() {
+				cache.GetDepsCall.DepMap = map[string][]string{
+					"dopepkg": {"libdope"},
+					"libdope": {"leftpad"},
+					"leftpad": {},
+				}
+				config.PackagesCall.Returns.Packages = []string{"dopepkg"}
+				cache.ListExistingCall.Returns.Packages = []string{
+					"dopepkg", "libdope", "leftpad", "oldpkg", "libold",
+				}
+			})
+
+			It("syncs the all dependencies", func() {
+				Expect(cache.SyncCall.SyncedPackages).To(ConsistOf(
+					"dopepkg", "libdope", "leftpad",
+				))
+			})
+
+			It("removes old packages", func() {
+				Expect(cache.RemoveCall.RemovedPkgs).To(ConsistOf("oldpkg", "libold"))
+			})
+		})
+
+		Context("when listing existing packages fails", func() {
+			BeforeEach(func() {
+				cache.GetDepsCall.DepMap = map[string][]string{
+					"dopepkg": {},
+				}
+				config.PackagesCall.Returns.Packages = []string{"dopepkg"}
+				cache.ListExistingCall.Returns.Err = errors.New("dang")
+			})
+
+			It("returns an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when removing an old package fails", func() {
+			BeforeEach(func() {
+				cache.GetDepsCall.DepMap = map[string][]string{
+					"dopepkg": {},
+				}
+				config.PackagesCall.Returns.Packages = []string{"dopepkg"}
+				cache.ListExistingCall.Returns.Packages = []string{
+					"dopepkg", "oldpkg",
+				}
+				cache.RemoveCall.Err = errors.New("dang")
+			})
+
+			It("returns an error", func() {
+				Expect(err).To(HaveOccurred())
 			})
 		})
 

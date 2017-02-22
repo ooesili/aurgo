@@ -181,4 +181,133 @@ var _ = Describe("Cache", func() {
 			})
 		})
 	})
+
+	Describe("ListExisting", func() {
+		var (
+			tempDir string
+			pkgs    []string
+			err     error
+		)
+
+		BeforeEach(func() {
+			var err error
+			tempDir, err = ioutil.TempDir("", "aurgo-cache-test-")
+			Expect(err).ToNot(HaveOccurred())
+
+			config.SourceBaseCall.SourceBase = tempDir
+		})
+
+		JustBeforeEach(func() {
+			pkgs, err = cache.ListExisting()
+		})
+
+		AfterEach(func() {
+			os.RemoveAll(tempDir)
+		})
+
+		Context("when there are no packages to list", func() {
+			It("succeeds", func() {
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("returns an empty slice", func() {
+				Expect(pkgs).To(BeEmpty())
+			})
+		})
+
+		Context("when there are packages to list", func() {
+			BeforeEach(func() {
+				for _, pkg := range []string{"dopepkg", "dopelib"} {
+					pkgPath := filepath.Join(tempDir, pkg)
+					Expect(os.Mkdir(pkgPath, 0755)).To(Succeed())
+				}
+			})
+
+			It("succeeds", func() {
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("returns all packages in the cache", func() {
+				Expect(pkgs).To(Equal([]string{"dopelib", "dopepkg"}))
+			})
+		})
+
+		Context("when the source directory does not exist", func() {
+			BeforeEach(func() {
+				Expect(os.Remove(tempDir)).To(Succeed())
+			})
+
+			It("returns an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("Remove", func() {
+		var (
+			tempDir    string
+			sourcePath string
+			err        error
+		)
+
+		BeforeEach(func() {
+			var err error
+			tempDir, err = ioutil.TempDir("", "aurgo-cache-test-")
+			Expect(err).ToNot(HaveOccurred())
+
+			sourcePath = filepath.Join(tempDir, "dopepkg")
+			Expect(os.Mkdir(sourcePath, 0755)).To(Succeed())
+
+			helloPath := filepath.Join(sourcePath, "hello")
+			err = ioutil.WriteFile(helloPath, nil, 0644)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			os.RemoveAll(tempDir)
+		})
+
+		JustBeforeEach(func() {
+			err = cache.Remove("dopepkg")
+		})
+
+		Context("when the source path exists", func() {
+			BeforeEach(func() {
+				config.SourcePathCall.Returns.Path = sourcePath
+			})
+
+			It("succeeds", func() {
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("removes the source path", func() {
+				Expect(sourcePath).ToNot(BeADirectory())
+			})
+		})
+
+		Context("when the source path cannot be resolved", func() {
+			BeforeEach(func() {
+				config.SourcePathCall.Returns.Err = errors.New("dang")
+			})
+
+			It("returns an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when the source path cannot be deleted", func() {
+			BeforeEach(func() {
+				Expect(os.Chmod(tempDir, 0000)).To(Succeed())
+				config.SourcePathCall.Returns.Path = sourcePath
+			})
+
+			AfterEach(func() {
+				os.Chmod(tempDir, 0755)
+			})
+
+			It("returns an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
 })

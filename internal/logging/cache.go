@@ -8,21 +8,22 @@ import (
 
 func NewCache(cache aurgo.Cache, out io.Writer) Cache {
 	return Cache{
-		cache:  cache,
+		Cache:  cache,
 		logger: newLogger(out),
 	}
 }
 
 type Cache struct {
-	cache aurgo.Cache
+	aurgo.Cache
 	logger
-}
-
-func (c Cache) GetDeps(pkg string) ([]string, error) {
-	return c.cache.GetDeps(pkg)
 }
 
 func (c Cache) Sync(pkg string) error {
 	c.log("syncing package: %s", pkg)
-	return c.cache.Sync(pkg)
+	return c.Cache.Sync(pkg)
+}
+
+func (c Cache) Remove(pkg string) error {
+	c.log("removing package: %s", pkg)
+	return c.Cache.Remove(pkg)
 }

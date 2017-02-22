@@ -13,6 +13,7 @@ import (
 var _ = Describe("Acceptance", func() {
 	var (
 		aurgoPath string
+		repoYml   string
 		fixture   string
 	)
 
@@ -21,11 +22,12 @@ var _ = Describe("Acceptance", func() {
 		aurgoPath, err = ioutil.TempDir("", "aurgo-")
 		Expect(err).ToNot(HaveOccurred())
 
+		repoYml = filepath.Join(aurgoPath, "repo.yml")
+
 		fixture = ""
 	})
 
 	JustBeforeEach(func() {
-		repoYml := filepath.Join(aurgoPath, "repo.yml")
 		err := ioutil.WriteFile(repoYml, []byte(fixture), 0644)
 		Expect(err).ToNot(HaveOccurred())
 	})
@@ -72,6 +74,32 @@ var _ = Describe("Acceptance", func() {
 
 				pkgbuildPath := filepath.Join(aurgoPath, "src", "xcape", "PKGBUILD")
 				Expect(pkgbuildPath).To(BeARegularFile())
+			})
+
+			It("can remove a package from the cache", func() {
+				cmd := exec.Command(aurgoBinary, "sync")
+				err := cmd.Run(
+					exec.Stdout(GinkgoWriter),
+					exec.Stderr(GinkgoWriter),
+					exec.Setenv("AURGOPATH", aurgoPath),
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				xcapePath := filepath.Join(aurgoPath, "src", "xcape")
+				Expect(xcapePath).To(BeADirectory())
+
+				err = ioutil.WriteFile(repoYml, []byte(fixtureNoPackages), 0644)
+				Expect(err).ToNot(HaveOccurred())
+
+				cmd = exec.Command(aurgoBinary, "sync")
+				err = cmd.Run(
+					exec.Stdout(GinkgoWriter),
+					exec.Stderr(GinkgoWriter),
+					exec.Setenv("AURGOPATH", aurgoPath),
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(xcapePath).ToNot(BeADirectory())
 			})
 		})
 
@@ -138,4 +166,8 @@ packages:
 var fixtureRepoYamlNtkGit = `---
 packages:
 - ntk-git
+`
+
+var fixtureNoPackages = `---
+packages: []
 `

@@ -9,6 +9,16 @@ type Cache struct {
 		DepMap map[string][]string
 		Err    error
 	}
+	ListExistingCall struct {
+		Returns struct {
+			Packages []string
+			Err      error
+		}
+	}
+	RemoveCall struct {
+		RemovedPkgs []string
+		Err         error
+	}
 }
 
 func (c *Cache) Sync(pkg string) error {
@@ -31,4 +41,18 @@ func (c *Cache) GetDeps(pkg string) ([]string, error) {
 	}
 
 	return deps, nil
+}
+
+func (c *Cache) ListExisting() ([]string, error) {
+	returns := c.ListExistingCall.Returns
+	return returns.Packages, returns.Err
+}
+
+func (c *Cache) Remove(pkg string) error {
+	if err := c.RemoveCall.Err; err != nil {
+		return err
+	}
+
+	c.RemoveCall.RemovedPkgs = append(c.RemoveCall.RemovedPkgs, pkg)
+	return nil
 }

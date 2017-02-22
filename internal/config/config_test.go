@@ -117,5 +117,12 @@ var _ = Describe("Config", func() {
 				Expect(url).To(Equal("https://aur.archlinux.org/package1.git"))
 			})
 		})
+
+		Describe("SourceBase", func() {
+			It("can list the source directory", func() {
+				sourceBase := config.SourceBase()
+				Expect(sourceBase).To(Equal(filepath.Join(tempDir, "src")))
+			})
+		})
 	})
 })

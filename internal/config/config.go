@@ -54,3 +54,7 @@ func (c Config) SourcePath(pkg string) (string, error) {
 func (c Config) AurRepoURL(pkg string) string {
 	return fmt.Sprintf("https://aur.archlinux.org/%s.git", pkg)
 }
+
+func (c Config) SourceBase() string {
+	return filepath.Join(c.aurgoPath, "src")
+}
