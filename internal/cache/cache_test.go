@@ -57,16 +57,6 @@ var _ = Describe("Cache", func() {
 			})
 		})
 
-		Context("when looking up the source path for the package fails", func() {
-			BeforeEach(func() {
-				config.SourcePathCall.Returns.Err = errors.New("dang")
-			})
-
-			It("returns an error", func() {
-				Expect(err).To(HaveOccurred())
-			})
-		})
-
 		Context("when cloning the package fails", func() {
 			BeforeEach(func() {
 				config.SourcePathCall.Returns.Path = "/path/to/coolpkg"
@@ -146,16 +136,6 @@ var _ = Describe("Cache", func() {
 					"checktool",
 					"testlib",
 				))
-			})
-		})
-
-		Context("when looking up the source path for the package fails", func() {
-			BeforeEach(func() {
-				config.SourcePathCall.Returns.Err = errors.New("dang")
-			})
-
-			It("returns an error", func() {
-				Expect(err).To(HaveOccurred())
 			})
 		})
 
@@ -282,16 +262,6 @@ var _ = Describe("Cache", func() {
 
 			It("removes the source path", func() {
 				Expect(sourcePath).ToNot(BeADirectory())
-			})
-		})
-
-		Context("when the source path cannot be resolved", func() {
-			BeforeEach(func() {
-				config.SourcePathCall.Returns.Err = errors.New("dang")
-			})
-
-			It("returns an error", func() {
-				Expect(err).To(HaveOccurred())
 			})
 		})
 

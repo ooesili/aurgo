@@ -12,7 +12,7 @@ type Git interface {
 }
 
 type Config interface {
-	SourcePath(pkg string) (string, error)
+	SourcePath(pkg string) string
 	AurRepoURL(string) string
 	SourceBase() string
 }
@@ -42,13 +42,10 @@ type Cache struct {
 }
 
 func (c Cache) Sync(pkg string) error {
-	sourcePath, err := c.config.SourcePath(pkg)
-	if err != nil {
-		return err
-	}
+	sourcePath := c.config.SourcePath(pkg)
 	aurRepoURL := c.config.AurRepoURL(pkg)
 
-	err = c.git.Clone(aurRepoURL, sourcePath)
+	err := c.git.Clone(aurRepoURL, sourcePath)
 	if err != nil {
 		return err
 	}
@@ -57,10 +54,7 @@ func (c Cache) Sync(pkg string) error {
 }
 
 func (c Cache) GetDeps(pkgname string) ([]string, error) {
-	sourcePath, err := c.config.SourcePath(pkgname)
-	if err != nil {
-		return nil, err
-	}
+	sourcePath := c.config.SourcePath(pkgname)
 
 	srcinfoPath := filepath.Join(sourcePath, ".SRCINFO")
 	srcinfoBytes, err := ioutil.ReadFile(srcinfoPath)
@@ -109,12 +103,9 @@ func (c Cache) ListExisting() ([]string, error) {
 }
 
 func (c Cache) Remove(pkg string) error {
-	sourcePath, err := c.config.SourcePath(pkg)
-	if err != nil {
-		return err
-	}
+	sourcePath := c.config.SourcePath(pkg)
 
-	err = os.RemoveAll(sourcePath)
+	err := os.RemoveAll(sourcePath)
 	if err != nil {
 		return err
 	}

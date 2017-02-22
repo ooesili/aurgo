@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	yaml "gopkg.in/yaml.v2"
@@ -40,15 +39,8 @@ func (c Config) Packages() ([]string, error) {
 	return c.packages, nil
 }
 
-func (c Config) SourcePath(pkg string) (string, error) {
-	sourcePath := filepath.Join(c.aurgoPath, "src", pkg)
-
-	err := os.MkdirAll(sourcePath, 0755)
-	if err != nil {
-		return "", err
-	}
-
-	return sourcePath, nil
+func (c Config) SourcePath(pkg string) string {
+	return filepath.Join(c.aurgoPath, "src", pkg)
 }
 
 func (c Config) AurRepoURL(pkg string) string {

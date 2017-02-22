@@ -70,44 +70,11 @@ var _ = Describe("Config", func() {
 		})
 
 		Describe("SourcePath", func() {
-			var (
-				sourcePath   string
-				err          error
-				expectedPath string
-			)
-
-			JustBeforeEach(func() {
-				expectedPath = filepath.Join(tempDir, "src", "package1")
-				sourcePath, err = config.SourcePath("package1")
-			})
-
-			It("succeeds", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
 			It("can list the source path for a package", func() {
+				sourcePath := config.SourcePath("package1")
+
+				expectedPath := filepath.Join(tempDir, "src", "package1")
 				Expect(sourcePath).To(Equal(expectedPath))
-			})
-
-			It("creates the path to the package on the filesystem", func() {
-				Expect(sourcePath).To(BeADirectory())
-			})
-
-			It("can be called a second time", func() {
-				sourcePath, err := config.SourcePath("package1")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(sourcePath).To(Equal(expectedPath))
-			})
-
-			Context("when the path can not be created", func() {
-				BeforeEach(func() {
-					srcPath := filepath.Join(tempDir, "src")
-					Expect(ioutil.WriteFile(srcPath, nil, 0644)).To(Succeed())
-				})
-
-				It("returns an error", func() {
-					Expect(err).To(HaveOccurred())
-				})
 			})
 		})
 

@@ -21,7 +21,6 @@ type Config struct {
 		}
 		Returns struct {
 			Path string
-			Err  error
 		}
 	}
 	SourceBaseCall struct {
@@ -39,10 +38,9 @@ func (c *Config) AurRepoURL(pkg string) string {
 	return c.AurRepoURLCall.Returns.URL
 }
 
-func (c *Config) SourcePath(pkg string) (string, error) {
+func (c *Config) SourcePath(pkg string) string {
 	c.SourcePathCall.Received.Package = pkg
-	returns := c.SourcePathCall.Returns
-	return returns.Path, returns.Err
+	return c.SourcePathCall.Returns.Path
 }
 
 func (c *Config) SourceBase() string {
