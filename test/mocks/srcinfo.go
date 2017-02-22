@@ -6,7 +6,7 @@ import (
 
 type SrcInfo struct {
 	ParseCall struct {
-		Recieved struct {
+		Received struct {
 			Input []byte
 		}
 		Returns struct {
@@ -17,7 +17,7 @@ type SrcInfo struct {
 }
 
 func (s *SrcInfo) Parse(input []byte) (cache.Package, error) {
-	s.ParseCall.Recieved.Input = input
+	s.ParseCall.Received.Input = input
 	returns := s.ParseCall.Returns
 	return returns.Package, returns.Err
 }

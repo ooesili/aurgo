@@ -134,7 +134,7 @@ var _ = Describe("Cache", func() {
 			})
 
 			It("calls SrcInfo.Parse with the SRCINFO file contents", func() {
-				Expect(srcinfo.ParseCall.Recieved.Input).To(Equal(srcinfoBytes))
+				Expect(srcinfo.ParseCall.Received.Input).To(Equal(srcinfoBytes))
 			})
 
 			It("returns all dependencies from the package", func() {

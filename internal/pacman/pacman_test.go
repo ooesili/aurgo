@@ -37,9 +37,9 @@ var _ = Describe("Pacman", func() {
 		})
 
 		It("executes the correct command", func() {
-			recieved := executor.ExecuteCall.Recieved
-			Expect(recieved.Command).To(Equal("pacman"))
-			Expect(recieved.Args).To(Equal([]string{"-Si"}))
+			received := executor.ExecuteCall.Received
+			Expect(received.Command).To(Equal("pacman"))
+			Expect(received.Args).To(Equal([]string{"-Si"}))
 		})
 
 		It("can return the correct list provided packages", func() {

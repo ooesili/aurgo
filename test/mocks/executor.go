@@ -4,7 +4,7 @@ import "bytes"
 
 type Executor struct {
 	ExecuteCall struct {
-		Recieved struct {
+		Received struct {
 			Command string
 			Args    []string
 		}
@@ -16,8 +16,8 @@ type Executor struct {
 }
 
 func (e *Executor) Execute(command string, args ...string) (*bytes.Buffer, error) {
-	e.ExecuteCall.Recieved.Command = command
-	e.ExecuteCall.Recieved.Args = args
+	e.ExecuteCall.Received.Command = command
+	e.ExecuteCall.Received.Args = args
 	returns := e.ExecuteCall.Returns
 	return returns.Stdout, returns.Err
 }
