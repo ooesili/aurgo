@@ -1,6 +1,7 @@
 package git
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -41,10 +42,24 @@ func (g Git) Clone(url, path string) error {
 
 func (g Git) execClone(url, path string) error {
 	cmd := exec.Command("git", "clone", url, path)
-	return cmd.Run(
+	err := cmd.Run(
 		exec.Stdout(g.stdout),
 		exec.Stderr(g.stderr),
 	)
+	if err != nil {
+		return err
+	}
+
+	masterRefPath := filepath.Join(path, ".git", "refs", "heads", "master")
+	if _, err := os.Stat(masterRefPath); err != nil {
+
+		// best effort cleanup, not critical if it fails
+		_ = os.RemoveAll(path)
+
+		return errors.New("repo not found")
+	}
+
+	return nil
 }
 
 func (g Git) execPull(path string) error {

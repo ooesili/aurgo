@@ -88,7 +88,7 @@ var _ = Describe("Acceptance", func() {
 				xcapePath := filepath.Join(aurgoPath, "src", "xcape")
 				Expect(xcapePath).To(BeADirectory())
 
-				err = ioutil.WriteFile(repoYml, []byte(fixtureNoPackages), 0644)
+				err = ioutil.WriteFile(repoYml, []byte(fixtureRepoYamlNoPackages), 0644)
 				Expect(err).ToNot(HaveOccurred())
 
 				cmd = exec.Command(aurgoBinary, "sync")
@@ -142,6 +142,27 @@ var _ = Describe("Acceptance", func() {
 				Expect(ntkGitPkgbuildPath).To(BeARegularFile())
 			})
 		})
+
+		Context("when a package does not exist", func() {
+			BeforeEach(func() {
+				fixture = fixtureRepoYamlNotFound
+			})
+
+			It("returns an error", func() {
+				cmd := exec.Command(aurgoBinary, "sync")
+				err := cmd.Run(
+					exec.Stdout(GinkgoWriter),
+					exec.Stderr(GinkgoWriter),
+					exec.Setenv("AURGOPATH", aurgoPath),
+				)
+				Expect(err).To(HaveOccurred())
+
+				notFoundPackagePath := filepath.Join(
+					aurgoPath, "src", "totally-not-a-package-i-hope",
+				)
+				Expect(notFoundPackagePath).ToNot(BeADirectory())
+			})
+		})
 	})
 
 	It("can view the version of a package in the AUR", func() {
@@ -168,6 +189,11 @@ packages:
 - ntk-git
 `
 
-var fixtureNoPackages = `---
+var fixtureRepoYamlNoPackages = `---
 packages: []
+`
+
+var fixtureRepoYamlNotFound = `---
+packages:
+- totally-not-a-package-i-hope
 `

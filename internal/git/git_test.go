@@ -25,11 +25,8 @@ var _ = Describe("Git", func() {
 			tempDir, err = ioutil.TempDir("", "aurgo-git-test-")
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(untarFixture("repo.tar.gz", tempDir)).To(Succeed())
-
 			sourceRepo = filepath.Join(tempDir, "repo")
 			destRepo = filepath.Join(tempDir, "dest")
-			Expect(os.Mkdir(destRepo, 0755)).To(Succeed())
 
 			git = New(GinkgoWriter, GinkgoWriter)
 		})
@@ -39,6 +36,10 @@ var _ = Describe("Git", func() {
 		})
 
 		Describe("cloning a new repo", func() {
+			BeforeEach(func() {
+				Expect(untarFixture("repo.tar.gz", tempDir)).To(Succeed())
+			})
+
 			It("can clone a repo", func() {
 				err := git.Clone(sourceRepo, destRepo)
 				Expect(err).ToNot(HaveOccurred())
@@ -58,6 +59,10 @@ var _ = Describe("Git", func() {
 		})
 
 		Describe("updating an existing repo", func() {
+			BeforeEach(func() {
+				Expect(untarFixture("repo.tar.gz", tempDir)).To(Succeed())
+			})
+
 			It("pulls changes when the repo already exists", func() {
 				err := git.Clone(sourceRepo, destRepo)
 				Expect(err).ToNot(HaveOccurred())
@@ -83,6 +88,24 @@ var _ = Describe("Git", func() {
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(HavePrefix("git pull failed: "))
 				})
+			})
+		})
+
+		Context("when the source repository is empty", func() {
+			var err error
+
+			BeforeEach(func() {
+				Expect(untarFixture("repo-empty.tar.gz", tempDir)).To(Succeed())
+
+				err = git.Clone(sourceRepo, destRepo)
+			})
+
+			It("returns an error", func() {
+				Expect(err).To(MatchError("git clone failed: repo not found"))
+			})
+
+			It("cleans up the empty repo", func() {
+				Expect(destRepo).ToNot(BeADirectory())
 			})
 		})
 	})
