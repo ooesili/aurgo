@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+set -eu
+
+function main() {
+  if [[ $# -lt 1 ]]; then
+    fatal 'no command given'
+  fi
+
+  local command="$1"
+  shift
+
+  case "$command" in
+    test-unit) test_unit "$@" ;;
+    test-acceptance) test_acceptance "$@" ;;
+    test-build) test_env_build "$@" ;;
+    test-clean) test_env_clean "$@" ;;
+    *) fatal 'invalid command' ;;
+  esac
+}
+
+function fatal() {
+  echo "error: $@"
+  exit 1
+}
+
+function log() {
+  echo "---> $@"
+}
+
+function test_unit() {
+  local repo_dir="$(script_dir)"
+
+  test_env_build
+
+  log 'running unit tests'
+  docker run -ti --rm \
+    -e GOPATH=/home/aurgo/go \
+    -v "$repo_dir:/home/aurgo/go/src/github.com/ooesili/aurgo" \
+    ooesili/aurgo \
+    go test -v github.com/ooesili/aurgo/internal/...
+}
+
+function test_acceptance() {
+  local repo_dir="$(script_dir)"
+
+  test_env_build
+
+  log 'running acceptance tests'
+  docker run --privileged -ti --rm \
+    -e GOPATH=/home/aurgo/go \
+    -v "$repo_dir:/home/aurgo/go/src/github.com/ooesili/aurgo" \
+    ooesili/aurgo \
+    go test -v github.com/ooesili/aurgo/test/acceptance
+}
+
+function test_env_build() {
+  local build_dir="$(script_dir)/docker"
+  local root_fs="$build_dir/root-fs"
+
+  create_root_fs "$root_fs"
+  import_base_image "$root_fs"
+  build_aurgo_image "$build_dir"
+}
+
+function test_env_clean() {
+  local build_dir="$(script_dir)/docker"
+
+  delete_rootfs "$build_dir"
+  remove_docker_image 'ooesili/aurgo'
+  remove_docker_image 'ooesili/arch-base'
+}
+
+function script_dir() {
+  local script_path=$(realpath "$BASH_SOURCE")
+  local script_dir=$(dirname "$script_path")
+  echo "$script_dir"
+}
+
+function create_root_fs() {
+  local docker_root="$1"
+
+  log 'creating docker filesystem'
+  if [[ ! -d "$docker_root" ]]; then
+    mkarchroot "$docker_root" base-devel devtools go git
+  else
+    echo 'already exists, nothing to do'
+  fi
+}
+
+function build_aurgo_image() {
+  local build_dir="$1"
+
+  log 'building docker image'
+  docker build -t ooesili/aurgo "$build_dir"
+}
+
+function import_base_image() {
+  local root_fs="$1"
+  local image_name='ooesili/arch-base'
+
+  log 'building Arch Linux base image'
+  if ! does_image_exist "$image_name"; then
+    sudo tar cf - -C "$root_fs" . | docker import - "$image_name"
+  else
+    echo 'already exists, nothing to do'
+  fi
+}
+
+function delete_rootfs() {
+  local script_dir="$1"
+
+  log 'deleting root-fs'
+  sudo rm -rf "$script_dir/root-fs"
+  sudo rm -f "$script_dir/root-fs.lock"
+}
+
+function remove_docker_image() {
+  local image_name="$1"
+
+  log "deleting docker image $1"
+  if does_image_exist "$image_name"; then
+    docker rmi "$image_name"
+  else
+    echo 'already removed, nothing to do'
+  fi
+}
+
+function does_image_exist() {
+  local image_name="$1"
+  [[ -n $(docker images -q "$image_name") ]]
+}
+
+main "$@"
