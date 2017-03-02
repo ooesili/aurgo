@@ -63,8 +63,7 @@ var _ = Describe("Config", func() {
 
 		Describe("Packages", func() {
 			It("can list the packages from the yaml file", func() {
-				packages, err := config.Packages()
-				Expect(err).ToNot(HaveOccurred())
+				packages := config.Packages()
 				Expect(packages).To(ConsistOf("package1", "package2"))
 			})
 		})

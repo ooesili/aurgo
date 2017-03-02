@@ -4,7 +4,6 @@ type Config struct {
 	PackagesCall struct {
 		Returns struct {
 			Packages []string
-			Err      error
 		}
 	}
 	AurRepoURLCall struct {
@@ -28,9 +27,8 @@ type Config struct {
 	}
 }
 
-func (c *Config) Packages() ([]string, error) {
-	returns := c.PackagesCall.Returns
-	return returns.Packages, returns.Err
+func (c *Config) Packages() []string {
+	return c.PackagesCall.Returns.Packages
 }
 
 func (c *Config) AurRepoURL(pkg string) string {

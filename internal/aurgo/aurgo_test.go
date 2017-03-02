@@ -205,16 +205,6 @@ var _ = Describe("Aurgo", func() {
 			})
 		})
 
-		Context("when listing the packages fails", func() {
-			BeforeEach(func() {
-				config.PackagesCall.Returns.Err = errors.New("dang")
-			})
-
-			It("returns an error", func() {
-				Expect(err).To(HaveOccurred())
-			})
-		})
-
 		Context("when syncing a package fails", func() {
 			BeforeEach(func() {
 				config.PackagesCall.Returns.Packages = []string{"dopepkg"}

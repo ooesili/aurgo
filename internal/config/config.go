@@ -35,8 +35,8 @@ type Config struct {
 	packages  []string
 }
 
-func (c Config) Packages() ([]string, error) {
-	return c.packages, nil
+func (c Config) Packages() []string {
+	return c.packages
 }
 
 func (c Config) SourcePath(pkg string) string {

@@ -5,7 +5,7 @@ import (
 )
 
 type Config interface {
-	Packages() ([]string, error)
+	Packages() []string
 }
 
 type Cache interface {
@@ -34,11 +34,7 @@ type Aurgo struct {
 }
 
 func (a Aurgo) SyncAll() error {
-	initialPkgs, err := a.config.Packages()
-	if err != nil {
-		return err
-	}
-
+	initialPkgs := a.config.Packages()
 	availablePackages := a.pacman.ListAvailable()
 
 	pkgList := newPkgList(initialPkgs, availablePackages)
@@ -63,7 +59,7 @@ func (a Aurgo) SyncAll() error {
 		}
 	}
 
-	err = a.removeOldPackages(pkgList)
+	err := a.removeOldPackages(pkgList)
 	if err != nil {
 		return err
 	}
