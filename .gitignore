@@ -1,6 +1,7 @@
 /.wercker
 /aurgo
 /vendor
+/tmp
 
 ##### Go.gitignore #####
 # Binaries for programs and plugins

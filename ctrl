@@ -4,9 +4,13 @@ set -eu
 script_path=$(realpath "$BASH_SOURCE")
 repo_dir=$(dirname "$script_path")
 build_dir="$repo_dir/docker"
-root_fs="$build_dir/root-fs"
+temp_dir="$repo_dir/tmp"
+root_fs="$temp_dir/root-fs"
+pacman_cache="$temp_dir/pacman-cache"
 
 function main() {
+  mkdir -p "$temp_dir"
+
   if [[ $# -lt 1 ]]; then
     fatal 'no command given'
   fi
@@ -38,6 +42,7 @@ function test_unit() {
   log 'running unit tests'
   docker run -ti --rm \
     -e GOPATH=/home/aurgo/go \
+    -v "$pacman_cache:/var/cache/pacman/pkg" \
     -v "$repo_dir:/home/aurgo/go/src/github.com/ooesili/aurgo" \
     ooesili/aurgo \
     go test -v github.com/ooesili/aurgo/internal/...
@@ -49,6 +54,7 @@ function test_acceptance() {
   log 'running acceptance tests'
   docker run --privileged -ti --rm \
     -e GOPATH=/home/aurgo/go \
+    -v "$pacman_cache:/var/cache/pacman/pkg" \
     -v "$repo_dir:/home/aurgo/go/src/github.com/ooesili/aurgo" \
     ooesili/aurgo \
     go test -v github.com/ooesili/aurgo/test/acceptance
@@ -61,7 +67,7 @@ function test_env_build() {
 }
 
 function test_env_clean() {
-  delete_rootfs
+  delete_temp_dir
   remove_docker_image ooesili/aurgo
   remove_docker_image ooesili/arch-base
 }
@@ -89,10 +95,9 @@ function import_base_image() {
   fi
 }
 
-function delete_rootfs() {
-  log 'deleting root-fs'
-  sudo rm -rf "$root_fs"
-  sudo rm -f "$root_fs.lock"
+function delete_temp_dir() {
+  log 'deleting temp dir'
+  sudo rm -rf "$temp_dir"
 }
 
 function remove_docker_image() {
