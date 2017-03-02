@@ -162,7 +162,7 @@ var _ = Describe("Cache", func() {
 		})
 	})
 
-	Describe("ListExisting", func() {
+	Describe("List", func() {
 		var (
 			tempDir string
 			pkgs    []string
@@ -178,7 +178,7 @@ var _ = Describe("Cache", func() {
 		})
 
 		JustBeforeEach(func() {
-			pkgs, err = cache.ListExisting()
+			pkgs, err = cache.List()
 		})
 
 		AfterEach(func() {

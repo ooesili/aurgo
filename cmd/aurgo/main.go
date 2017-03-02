@@ -54,8 +54,9 @@ func buildAurgo() (aurgo.Aurgo, error) {
 		return aurgo.Aurgo{}, err
 	}
 
-	executor := pacman.NewOsExecutor()
-	pacman, err := pacman.New(executor)
+	pacman, err := pacman.New(
+		pacman.NewOsExecutor(),
+	)
 	if err != nil {
 		return aurgo.Aurgo{}, err
 	}
@@ -64,18 +65,26 @@ func buildAurgo() (aurgo.Aurgo, error) {
 	if err != nil {
 		return aurgo.Aurgo{}, err
 	}
-	srcinfo := srcinfo.New(arch)
 
-	git := git.New(
-		os.Stdout,
-		os.Stderr,
-	)
-	cache := logging.NewCache(
-		cache.New(config, git, srcinfo),
+	repo := logging.NewRepo(
+		cache.New(
+			config,
+			git.New(os.Stdout, os.Stderr),
+			srcinfo.New(arch),
+		),
 		os.Stdout,
 	)
 
-	aurgo := aurgo.New(config, cache, pacman)
+	aurgo := aurgo.New(
+		aurgo.NewVisitingDepWalker(
+			aurgo.NewFilteringVisitor(
+				aurgo.NewRepoVisitor(repo),
+				pacman.ListAvailable(),
+			),
+		),
+		aurgo.NewRepoCleaner(repo),
+		config,
+	)
 
 	return aurgo, nil
 }

@@ -84,7 +84,7 @@ func aggregateDeps(pkg Package) []string {
 	return allDeps
 }
 
-func (c Cache) ListExisting() ([]string, error) {
+func (c Cache) List() ([]string, error) {
 	sourceBase := c.config.SourceBase()
 
 	files, err := ioutil.ReadDir(sourceBase)
