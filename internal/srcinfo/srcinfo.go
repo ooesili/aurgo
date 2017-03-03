@@ -2,7 +2,6 @@ package srcinfo
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"regexp"
 
@@ -22,7 +21,6 @@ type SrcInfo struct {
 func (s SrcInfo) Parse(input []byte) (cache.Package, error) {
 	fields := parseFields(input)
 
-	seenPkgnameField := false
 	foundCompatibleArch := false
 	pkg := cache.Package{}
 
@@ -41,12 +39,6 @@ func (s SrcInfo) Parse(input []byte) (cache.Package, error) {
 			if field.value == s.targetArch || field.value == "any" {
 				foundCompatibleArch = true
 			}
-
-		case "pkgname":
-			if seenPkgnameField {
-				return cache.Package{}, errors.New("cannot handle split packages")
-			}
-			seenPkgnameField = true
 		}
 	}
 

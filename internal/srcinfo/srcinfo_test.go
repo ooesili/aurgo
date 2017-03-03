@@ -155,10 +155,31 @@ var _ = Describe("Srcinfo", func() {
 	})
 
 	Context("when given a split package", func() {
-		It("returns an error", func() {
+		var pkg cache.Package
+
+		BeforeEach(func() {
 			srcinfo := New("x86_64")
-			_, err := srcinfo.Parse([]byte(fixtureSplitPackage))
-			Expect(err).To(MatchError("cannot handle split packages"))
+			var err error
+			pkg, err = srcinfo.Parse([]byte(fixtureSplitPackage))
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("gathers up all of the depends from each package", func() {
+			Expect(pkg.Depends).To(Equal([]string{
+				"libdope", "leftpad", "glib2",
+			}))
+		})
+
+		It("gathers up all of the makedepends from each package", func() {
+			Expect(pkg.Makedepends).To(Equal([]string{
+				"cmake", "maven", "tup",
+			}))
+		})
+
+		It("gathers up all of the checkdepends from each package", func() {
+			Expect(pkg.Checkdepends).To(Equal([]string{
+				"testlib", "checktool", "check",
+			}))
 		})
 	})
 })

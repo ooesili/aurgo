@@ -163,6 +163,27 @@ var _ = Describe("Acceptance", func() {
 				Expect(notFoundPackagePath).ToNot(BeADirectory())
 			})
 		})
+
+		Context("when given a split package", func() {
+			BeforeEach(func() {
+				fixture = fixtureRepoYamlSplitPackage
+			})
+
+			It("succesfully downloads the package", func() {
+				cmd := exec.Command(aurgoBinary, "sync")
+				err := cmd.Run(
+					exec.Stdout(GinkgoWriter),
+					exec.Stderr(GinkgoWriter),
+					exec.Setenv("AURGOPATH", aurgoPath),
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				pkgbuildPath := filepath.Join(
+					aurgoPath, "src", "python-git-remote-dropbox-git", "PKGBUILD",
+				)
+				Expect(pkgbuildPath).To(BeARegularFile())
+			})
+		})
 	})
 
 	It("can view the version of a package in the AUR", func() {
@@ -196,4 +217,9 @@ packages: []
 var fixtureRepoYamlNotFound = `---
 packages:
 - totally-not-a-package-i-hope
+`
+
+var fixtureRepoYamlSplitPackage = `---
+packages:
+- python-git-remote-dropbox-git
 `

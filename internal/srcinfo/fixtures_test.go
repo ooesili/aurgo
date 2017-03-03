@@ -46,10 +46,19 @@ pkgname = archspecificdeps
 var fixtureSplitPackage = `
 pkgbase = splitpkg
 	arch = any
-	depends = leftpad
+	depends = libdope
+	makedepends = cmake
+	checkdepends = testlib
 
 pkgname = splitpkg-gtk
+	depends = leftpad
+	makedepends = maven
+	checkdepends = checktool
+
 pkgname = libsplit
+	depends = glib2
+	makedepends = tup
+	checkdepends = check
 `
 
 var fixtureVersionConstraints = `
