@@ -1,0 +1,45 @@
+---
+- name: install required packages
+  package: "name={{ item }} state=installed"
+  become: true
+  with_items:
+  - git
+  - go
+  - devtools
+
+- name: install bashrc
+  template: src=bashrc dest=/home/vagrant/.bashrc
+
+- name: install motd
+  copy: src=motd dest=/etc/motd
+  become: true
+
+- name: create and chown GOPATH directories
+  file: "path={{ item }} state=directory owner=vagrant"
+  become: true
+  with_items:
+  - "{{ GOPATH }}"
+  - "{{ GOPATH }}/bin"
+  - "{{ GOPATH }}/src"
+  - "{{ GOPATH }}/src/github.com"
+  - "{{ GOPATH }}/src/github.com/ooesili"
+
+- name: see if glide is installed
+  stat: "path={{ GOPATH }}/bin/glide"
+  register: glide_stat
+
+- name: install glide
+  shell: |
+    source ~/.bashrc
+    curl https://glide.sh/get | sh
+  when: not glide_stat.stat.exists
+
+- name: see if ginkgo is installed
+  stat: path={{ GOPATH }}/bin/ginkgo
+  register: ginkgo_stat
+
+- name: install ginkgo
+  shell: |
+    source ~/.bashrc
+    go get github.com/onsi/ginkgo/ginkgo
+  when: not ginkgo_stat.stat.exists

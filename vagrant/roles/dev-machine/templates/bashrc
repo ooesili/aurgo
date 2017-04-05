@@ -1,0 +1,21 @@
+# setup environment for go
+export GOPATH="{{ GOPATH }}"
+export PATH="$GOPATH/bin:$PATH"
+
+# if not running interactively, stop here
+[[ $- != *i* ]] && return
+
+# common aliases
+alias ls='ls --color=auto'
+alias l='ls -lh'
+alias la='ls -lhA'
+
+# test aliases
+alias unit-tests='ginkgo -r "$GOPATH/src/github.com/ooesili/aurgo/internal"'
+alias acceptance-tests='ginkgo $GOPATH/src/github.com/ooesili/aurgo/test/acceptance'
+
+# bash prompt
+PS1='\[\e]0;\u@\h: \w\a\]\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n\$ '
+
+# start us the shared folder
+cd $GOPATH/src/github.com/ooesili/aurgo
