@@ -1,6 +1,8 @@
-hash: 911f03c43d4b033514e9b8224faf28cef051c0afe17c929ca62eedfd09fbe74d
-updated: 2017-02-04T10:27:23.949953158-06:00
+hash: 0eb231069f73b64dcdca4def6e2c109291e4736a537a3dba488c5e9530736fca
+updated: 2017-04-05T14:36:51.142252168-05:00
 imports:
+- name: github.com/pkg/exec
+  version: 0bd164ad2a5a0bc76c2c96471309f1ab70d8bf52
 - name: gopkg.in/yaml.v2
   version: 4c78c975fe7c825c6d1466c42be594d1d6f3aba6
 testImports:
@@ -8,6 +10,7 @@ testImports:
   version: bb93381d543b0e5725244abe752214a110791d01
   subpackages:
   - config
+  - extensions/table
   - internal/codelocation
   - internal/containernode
   - internal/failer
@@ -39,8 +42,6 @@ testImports:
   - matchers/support/goraph/node
   - matchers/support/goraph/util
   - types
-- name: github.com/pkg/exec
-  version: 0bd164ad2a5a0bc76c2c96471309f1ab70d8bf52
 - name: golang.org/x/sys
   version: 7a6e5648d140666db5d920909e082ca00a87ba2c
   subpackages:

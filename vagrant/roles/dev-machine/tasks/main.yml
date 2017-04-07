@@ -24,6 +24,9 @@
   - "{{ GOPATH }}/src/github.com"
   - "{{ GOPATH }}/src/github.com/ooesili"
 
+- name: create temporary directory for acceptance tests
+  file: path=/home/vagrant/.tmp state=directory
+
 - name: see if glide is installed
   stat: "path={{ GOPATH }}/bin/glide"
   register: glide_stat

@@ -50,3 +50,7 @@ func (c Config) AurRepoURL(pkg string) string {
 func (c Config) SourceBase() string {
 	return filepath.Join(c.aurgoPath, "src")
 }
+
+func (c Config) ChrootPath() string {
+	return filepath.Join(c.aurgoPath, "chroot")
+}

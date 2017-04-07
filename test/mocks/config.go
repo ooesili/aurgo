@@ -25,6 +25,9 @@ type Config struct {
 	SourceBaseCall struct {
 		SourceBase string
 	}
+	ChrootPathCall struct {
+		ChrootPath string
+	}
 }
 
 func (c *Config) Packages() []string {
@@ -43,4 +46,8 @@ func (c *Config) SourcePath(pkg string) string {
 
 func (c *Config) SourceBase() string {
 	return c.SourceBaseCall.SourceBase
+}
+
+func (c *Config) ChrootPath() string {
+	return c.ChrootPathCall.ChrootPath
 }

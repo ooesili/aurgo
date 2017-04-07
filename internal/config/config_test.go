@@ -90,5 +90,12 @@ var _ = Describe("Config", func() {
 				Expect(sourceBase).To(Equal(filepath.Join(tempDir, "src")))
 			})
 		})
+
+		Describe("ChrootPath", func() {
+			It("returns the path to the chroot directory", func() {
+				chrootPath := config.ChrootPath()
+				Expect(chrootPath).To(Equal(filepath.Join(tempDir, "chroot")))
+			})
+		})
 	})
 })

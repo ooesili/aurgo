@@ -2,6 +2,7 @@ package aurgo
 
 type Config interface {
 	Packages() []string
+	ChrootPath() string
 }
 
 type DepWalker interface {

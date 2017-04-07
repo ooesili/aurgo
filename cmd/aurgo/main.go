@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/ooesili/aurgo/internal/aur"
 	"github.com/ooesili/aurgo/internal/aurgo"
 	"github.com/ooesili/aurgo/internal/cache"
+	"github.com/ooesili/aurgo/internal/chroot"
 	"github.com/ooesili/aurgo/internal/config"
 	"github.com/ooesili/aurgo/internal/git"
 	"github.com/ooesili/aurgo/internal/logging"
@@ -28,6 +30,8 @@ func realMain() error {
 		return sync()
 	case "info":
 		return info(os.Args[2])
+	case "mkchroot":
+		return mkchroot()
 	default:
 		panic("unknown command")
 	}
@@ -47,9 +51,13 @@ func sync() error {
 	return nil
 }
 
-func buildAurgo() (aurgo.Aurgo, error) {
+func buildConfig() (config.Config, error) {
 	repoPath := os.Getenv("AURGOPATH")
-	config, err := config.New(repoPath)
+	return config.New(repoPath)
+}
+
+func buildAurgo() (aurgo.Aurgo, error) {
+	config, err := buildConfig()
 	if err != nil {
 		return aurgo.Aurgo{}, err
 	}
@@ -102,4 +110,38 @@ func info(packageName string) error {
 
 	fmt.Printf("aur/%s %s\n", packageName, version)
 	return nil
+}
+
+func mkchroot() error {
+	config, err := buildConfig()
+	if err != nil {
+		return err
+	}
+
+	buildManager := aurgo.NewBuildManager(
+		chroot.New(
+			newExecutorLogger(
+				chroot.NewOSExecutor(os.Stdout, os.Stderr),
+			),
+			chroot.NewOSFilesystem(),
+		),
+		config,
+	)
+
+	return buildManager.Provision()
+}
+
+func newExecutorLogger(executor chroot.Executor) executorLogger {
+	return executorLogger{
+		executor: executor,
+	}
+}
+
+type executorLogger struct {
+	executor chroot.Executor
+}
+
+func (e executorLogger) Execute(command string, args ...string) error {
+	fmt.Printf("===> $ %s %s", command, strings.Join(args, " "))
+	return e.executor.Execute(command, args...)
 }

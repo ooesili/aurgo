@@ -18,8 +18,13 @@ var _ = Describe("Acceptance", func() {
 	)
 
 	BeforeEach(func() {
+		tempBase, ok := os.LookupEnv("TMPDIR_BASE")
+		if !ok {
+			tempBase = os.TempDir()
+		}
+
 		var err error
-		aurgoPath, err = ioutil.TempDir("", "aurgo-")
+		aurgoPath, err = ioutil.TempDir(tempBase, "aurgo-")
 		Expect(err).ToNot(HaveOccurred())
 
 		repoYml = filepath.Join(aurgoPath, "repo.yml")
@@ -33,7 +38,7 @@ var _ = Describe("Acceptance", func() {
 	})
 
 	AfterEach(func() {
-		os.RemoveAll(aurgoPath)
+		exec.Command("sudo", "rm", "-rf", aurgoPath).Run()
 	})
 
 	Describe("aurgo sync", func() {
@@ -192,6 +197,21 @@ var _ = Describe("Acceptance", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(string(output)).To(Equal("aur/xcape 1.2-1\n"))
+	})
+
+	It("can create a build chroot", func() {
+		cmd := exec.Command(aurgoBinary, "mkchroot")
+		err := cmd.Run(
+			exec.Stdout(GinkgoWriter),
+			exec.Stderr(GinkgoWriter),
+			exec.Setenv("AURGOPATH", aurgoPath),
+		)
+		Expect(err).ToNot(HaveOccurred())
+
+		pkgbuildPath := filepath.Join(
+			aurgoPath, "chroot", "root", ".arch-chroot",
+		)
+		Expect(pkgbuildPath).To(BeARegularFile())
 	})
 })
 

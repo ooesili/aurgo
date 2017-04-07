@@ -1,6 +1,7 @@
 # setup environment for go
 export GOPATH="{{ GOPATH }}"
 export PATH="$GOPATH/bin:$PATH"
+export TMPDIR_BASE="$HOME/.tmp"
 
 # if not running interactively, stop here
 [[ $- != *i* ]] && return

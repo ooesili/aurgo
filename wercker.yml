@@ -10,4 +10,4 @@ build:
   - script:
       name: go test
       code: |
-        go test -v ./internal/... ./test/acceptance
+        go test -v ./internal/...
