@@ -142,6 +142,6 @@ type executorLogger struct {
 }
 
 func (e executorLogger) Execute(command string, args ...string) error {
-	fmt.Printf("===> $ %s %s", command, strings.Join(args, " "))
+	fmt.Printf("===> $ %s %s\n", command, strings.Join(args, " "))
 	return e.executor.Execute(command, args...)
 }
