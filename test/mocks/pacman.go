@@ -4,10 +4,12 @@ type Pacman struct {
 	ListAvailableCall struct {
 		Returns struct {
 			Packages []string
+			Err      error
 		}
 	}
 }
 
-func (p *Pacman) ListAvailable() []string {
-	return p.ListAvailableCall.Returns.Packages
+func (p *Pacman) ListAvailable() ([]string, error) {
+	returns := p.ListAvailableCall.Returns
+	return returns.Packages, returns.Err
 }

@@ -1,9 +1,11 @@
 package aurgo_test
 
 import (
+	"errors"
 	"fmt"
 
 	. "github.com/ooesili/aurgo/internal/aurgo"
+	"github.com/ooesili/aurgo/test/mocks"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -144,7 +146,10 @@ var _ = Describe("FilteringVisitor", func() {
 			visitor := &MockVisitor{}
 			visitor.VisitCall.DepMap = map[string][]string{"dopepkg": deps}
 
-			filteringVisitor := NewFilteringVisitor(visitor, seen)
+			pacman := &mocks.Pacman{}
+			pacman.ListAvailableCall.Returns.Packages = seen
+
+			filteringVisitor := NewFilteringVisitor(visitor, pacman)
 			deps, err := filteringVisitor.Visit("dopepkg")
 
 			Expect(err).ToNot(HaveOccurred())
@@ -195,16 +200,45 @@ var _ = Describe("FilteringVisitor", func() {
 	)
 
 	Describe("failure", func() {
-		It("returns errors from the wrapped visitor", func() {
-			visitor := &MockVisitor{}
-			visitor.VisitCall.DepMap = map[string][]string{}
+		var (
+			visitor          *MockVisitor
+			pacman           *mocks.Pacman
+			filteringVisitor *FilteringVisitor
+			err              error
+		)
 
-			seen := []string{}
+		BeforeEach(func() {
+			visitor = &MockVisitor{}
+			pacman = &mocks.Pacman{}
+			filteringVisitor = NewFilteringVisitor(visitor, pacman)
+		})
 
-			filteringVisitor := NewFilteringVisitor(visitor, seen)
-			_, err := filteringVisitor.Visit("dopepkg")
+		JustBeforeEach(func() {
+			_, err = filteringVisitor.Visit("dopepkg")
+		})
 
-			Expect(err).To(HaveOccurred())
+		Context("when there is an errro visiting the package", func() {
+			BeforeEach(func() {
+				visitor.VisitCall.DepMap = map[string][]string{}
+				pacman.ListAvailableCall.Returns.Err = nil
+			})
+
+			It("returns an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when there is an error listing the available packages", func() {
+			BeforeEach(func() {
+				visitor.VisitCall.DepMap = map[string][]string{
+					"dopepkg": []string{},
+				}
+				pacman.ListAvailableCall.Returns.Err = errors.New("oh no")
+			})
+
+			It("returns an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
 		})
 	})
 })

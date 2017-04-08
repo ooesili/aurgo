@@ -63,24 +63,29 @@ func (s *statefulWalker) didVisit(pkg string) bool {
 	return false
 }
 
-func NewFilteringVisitor(visitor Visitor, seen []string) FilteringVisitor {
-	seenMap := make(map[string]bool)
-	for _, pkg := range seen {
-		seenMap[pkg] = true
-	}
+type PkgManager interface {
+	ListAvailable() ([]string, error)
+}
 
-	return FilteringVisitor{
-		visitor: visitor,
-		seen:    seenMap,
+func NewFilteringVisitor(visitor Visitor, pkgManager PkgManager) *FilteringVisitor {
+	return &FilteringVisitor{
+		visitor:    visitor,
+		pkgManager: pkgManager,
 	}
 }
 
 type FilteringVisitor struct {
-	visitor Visitor
-	seen    map[string]bool
+	visitor    Visitor
+	pkgManager PkgManager
+	seen       map[string]bool
 }
 
-func (f FilteringVisitor) Visit(pkg string) ([]string, error) {
+func (f *FilteringVisitor) Visit(pkg string) ([]string, error) {
+	err := f.ensureInitialized()
+	if err != nil {
+		return nil, err
+	}
+
 	deps, err := f.visitor.Visit(pkg)
 	if err != nil {
 		return nil, err
@@ -93,4 +98,22 @@ func (f FilteringVisitor) Visit(pkg string) ([]string, error) {
 		}
 	}
 	return unseen, nil
+}
+
+func (f *FilteringVisitor) ensureInitialized() error {
+	if f.seen != nil {
+		return nil
+	}
+
+	availablePkgs, err := f.pkgManager.ListAvailable()
+	if err != nil {
+		return err
+	}
+
+	f.seen = make(map[string]bool)
+	for _, pkg := range availablePkgs {
+		f.seen[pkg] = true
+	}
+
+	return nil
 }

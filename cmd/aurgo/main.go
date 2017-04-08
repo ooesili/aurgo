@@ -62,12 +62,7 @@ func buildAurgo() (aurgo.Aurgo, error) {
 		return aurgo.Aurgo{}, err
 	}
 
-	pacman, err := pacman.New(
-		pacman.NewOsExecutor(),
-	)
-	if err != nil {
-		return aurgo.Aurgo{}, err
-	}
+	pacman := pacman.New(pacman.NewOsExecutor())
 
 	arch, err := srcinfo.ArchString(runtime.GOARCH)
 	if err != nil {
@@ -87,7 +82,7 @@ func buildAurgo() (aurgo.Aurgo, error) {
 		aurgo.NewVisitingDepWalker(
 			aurgo.NewFilteringVisitor(
 				aurgo.NewRepoVisitor(repo),
-				pacman.ListAvailable(),
+				pacman,
 			),
 		),
 		aurgo.NewRepoCleaner(repo),

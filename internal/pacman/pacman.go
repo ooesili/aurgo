@@ -10,25 +10,23 @@ type Executor interface {
 	Execute(command string, args ...string) (*bytes.Buffer, error)
 }
 
-func New(executor Executor) (Pacman, error) {
-	stdout, err := executor.Execute("pacman", "-Si")
-	if err != nil {
-		return Pacman{}, err
-	}
-
-	availablePkgs := parsePackagesFromStdout(stdout)
-
+func New(executor Executor) Pacman {
 	return Pacman{
-		availablePkgs: availablePkgs,
-	}, nil
+		executor: executor,
+	}
 }
 
 type Pacman struct {
-	availablePkgs []string
+	executor Executor
 }
 
-func (p Pacman) ListAvailable() []string {
-	return p.availablePkgs
+func (p Pacman) ListAvailable() ([]string, error) {
+	stdout, err := p.executor.Execute("pacman", "-Si")
+	if err != nil {
+		return nil, err
+	}
+
+	return parsePackagesFromStdout(stdout), nil
 }
 
 func parsePackagesFromStdout(stdout *bytes.Buffer) []string {

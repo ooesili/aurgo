@@ -15,57 +15,63 @@ var _ = Describe("Pacman", func() {
 	var (
 		executor *mocks.Executor
 		pacman   Pacman
-		err      error
 	)
 
 	BeforeEach(func() {
 		executor = &mocks.Executor{}
+		pacman = New(executor)
 	})
 
-	JustBeforeEach(func() {
-		pacman, err = New(executor)
-	})
+	Describe("ListAvailable", func() {
+		var (
+			pkgs []string
+			err  error
+		)
 
-	Context("when the pacman command executes successfully", func() {
-		BeforeEach(func() {
-			stdout := bytes.NewBufferString(fixtureRealOutput)
-			executor.ExecuteCall.Returns.Stdout = stdout
+		JustBeforeEach(func() {
+			pkgs, err = pacman.ListAvailable()
 		})
 
-		It("succeeds", func() {
-			Expect(err).ToNot(HaveOccurred())
+		Context("when the pacman command executes successfully", func() {
+			BeforeEach(func() {
+				stdout := bytes.NewBufferString(fixtureRealOutput)
+				executor.ExecuteCall.Returns.Stdout = stdout
+			})
+
+			It("succeeds", func() {
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("executes the correct command", func() {
+				received := executor.ExecuteCall.Received
+				Expect(received.Command).To(Equal("pacman"))
+				Expect(received.Args).To(Equal([]string{"-Si"}))
+			})
+
+			It("can return the correct list provided packages", func() {
+				Expect(pkgs).To(ConsistOf(
+					"cronie",
+					"cron",
+					"curl",
+					"libcurl.so",
+					"grub",
+					"grub-common",
+					"grub-bios",
+					"grub-emu",
+					"grub-efi-x86_64",
+					"rust",
+				))
+			})
 		})
 
-		It("executes the correct command", func() {
-			received := executor.ExecuteCall.Received
-			Expect(received.Command).To(Equal("pacman"))
-			Expect(received.Args).To(Equal([]string{"-Si"}))
-		})
+		Context("when pacman fails to execute", func() {
+			BeforeEach(func() {
+				executor.ExecuteCall.Returns.Err = errors.New("dang")
+			})
 
-		It("can return the correct list provided packages", func() {
-			pkgs := pacman.ListAvailable()
-			Expect(pkgs).To(ConsistOf(
-				"cronie",
-				"cron",
-				"curl",
-				"libcurl.so",
-				"grub",
-				"grub-common",
-				"grub-bios",
-				"grub-emu",
-				"grub-efi-x86_64",
-				"rust",
-			))
-		})
-	})
-
-	Context("when pacman fails to execute", func() {
-		BeforeEach(func() {
-			executor.ExecuteCall.Returns.Err = errors.New("dang")
-		})
-
-		It("returns an error", func() {
-			Expect(err).To(HaveOccurred())
+			It("returns an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
 		})
 	})
 })
