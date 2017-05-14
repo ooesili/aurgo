@@ -84,4 +84,64 @@ var _ = Describe("Filesystem", func() {
 			})
 		})
 	})
+
+	Describe("ListFiles", func() {
+		var (
+			dirname string
+			err     error
+			files   []string
+		)
+
+		BeforeEach(func() {
+			dirname = ""
+		})
+
+		JustBeforeEach(func() {
+			files, err = filesystem.ListFiles(dirname)
+		})
+
+		Context("with no files", func() {
+			BeforeEach(func() {
+				dirname = tempDir
+			})
+
+			It("returns an empty result", func() {
+				Expect(files).To(BeEmpty())
+			})
+
+			It("succeeds", func() {
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+
+		Context("with multiple files", func() {
+			BeforeEach(func() {
+				dirname = tempDir
+			})
+
+			BeforeEach(func() {
+				path1 := filepath.Join(tempDir, "hello")
+				Expect(ioutil.WriteFile(path1, nil, 0600)).To(Succeed())
+
+				path2 := filepath.Join(tempDir, "friend")
+				Expect(ioutil.WriteFile(path2, nil, 0600)).To(Succeed())
+			})
+
+			It("returns the names of those files", func() {
+				Expect(files).To(ConsistOf("hello", "friend"))
+			})
+		})
+
+		Context("when the directory cannot be read", func() {
+			BeforeEach(func() {
+				path := filepath.Join(tempDir, "notadir")
+				Expect(ioutil.WriteFile(path, nil, 0600)).To(Succeed())
+				dirname = path
+			})
+
+			It("returns an error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
 })

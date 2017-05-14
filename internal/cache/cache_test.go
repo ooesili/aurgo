@@ -2,8 +2,6 @@ package cache_test
 
 import (
 	"errors"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	. "github.com/ooesili/aurgo/internal/cache"
@@ -19,6 +17,7 @@ var _ = Describe("Cache", func() {
 		config  *mocks.Config
 		git     *mocks.Git
 		srcinfo *mocks.SrcInfo
+		fs      *mocks.Filesystem
 		err     error
 	)
 
@@ -26,10 +25,11 @@ var _ = Describe("Cache", func() {
 		config = &mocks.Config{}
 		git = &mocks.Git{}
 		srcinfo = &mocks.SrcInfo{}
+		fs = &mocks.Filesystem{}
 	})
 
 	JustBeforeEach(func() {
-		cache = New(config, git, srcinfo)
+		cache = New(config, git, srcinfo, fs)
 	})
 
 	Describe("Sync", func() {
@@ -72,47 +72,32 @@ var _ = Describe("Cache", func() {
 
 	Describe("GetDeps", func() {
 		var (
-			tempDir      string
-			pkgPath      string
 			srcinfoPath  string
-			expectedPkg  Package
 			pkgs         []string
 			srcinfoBytes []byte
 			err          error
 		)
 
 		BeforeEach(func() {
-			var err error
-			tempDir, err = ioutil.TempDir("", "aurgo-srcinfo-test-")
-			Expect(err).ToNot(HaveOccurred())
-
 			srcinfoBytes = []byte("cool bytes")
-			expectedPkg = Package{
-				Depends:      []string{"leftpad", "libdope"},
-				Makedepends:  []string{"cmake", "maven"},
-				Checkdepends: []string{"checktool", "testlib"},
-			}
+			fs.ReadFileCall.Returns.Bytes = srcinfoBytes
 
-			pkgPath = filepath.Join(tempDir, "coolpkg")
-			Expect(os.Mkdir(pkgPath, 0755)).To(Succeed())
-
+			pkgPath := "/path/to/coolpkg"
+			config.SourcePathCall.Returns.Path = pkgPath
 			srcinfoPath = filepath.Join(pkgPath, ".SRCINFO")
-			err = ioutil.WriteFile(srcinfoPath, srcinfoBytes, 0644)
-			Expect(err).ToNot(HaveOccurred())
 		})
 
 		JustBeforeEach(func() {
 			pkgs, err = cache.GetDeps("coolpkg")
 		})
 
-		AfterEach(func() {
-			os.RemoveAll(tempDir)
-		})
-
 		Context("when all dependencies succeed", func() {
 			BeforeEach(func() {
-				config.SourcePathCall.Returns.Path = pkgPath
-				srcinfo.ParseCall.Returns.Package = expectedPkg
+				srcinfo.ParseCall.Returns.Package = Package{
+					Depends:      []string{"leftpad", "libdope"},
+					Makedepends:  []string{"cmake", "maven"},
+					Checkdepends: []string{"checktool", "testlib"},
+				}
 			})
 
 			It("suceeds", func() {
@@ -121,6 +106,10 @@ var _ = Describe("Cache", func() {
 
 			It("looks up the source path for the package", func() {
 				Expect(config.SourcePathCall.Received.Package).To(Equal("coolpkg"))
+			})
+
+			It("reads the correct SRCINFO file", func() {
+				Expect(fs.ReadFileCall.Received.Path).To(Equal(srcinfoPath))
 			})
 
 			It("calls SrcInfo.Parse with the SRCINFO file contents", func() {
@@ -139,10 +128,9 @@ var _ = Describe("Cache", func() {
 			})
 		})
 
-		Context("when the SRCINFO file does not exist", func() {
+		Context("when reading the SRCINFO file fails", func() {
 			BeforeEach(func() {
-				config.SourcePathCall.Returns.Path = pkgPath
-				Expect(os.Remove(srcinfoPath)).To(Succeed())
+				fs.ReadFileCall.Returns.Err = errors.New("dang")
 			})
 
 			It("returns an error", func() {
@@ -152,7 +140,7 @@ var _ = Describe("Cache", func() {
 
 		Context("when parsing the sourcinfo file fails", func() {
 			BeforeEach(func() {
-				config.SourcePathCall.Returns.Path = pkgPath
+				fs.ReadFileCall.Returns.Bytes = srcinfoBytes
 				srcinfo.ParseCall.Returns.Err = errors.New("dang")
 			})
 
@@ -164,47 +152,30 @@ var _ = Describe("Cache", func() {
 
 	Describe("List", func() {
 		var (
-			tempDir string
-			pkgs    []string
-			err     error
+			pkgs []string
+			err  error
 		)
 
 		BeforeEach(func() {
-			var err error
-			tempDir, err = ioutil.TempDir("", "aurgo-cache-test-")
-			Expect(err).ToNot(HaveOccurred())
-
-			config.SourceBaseCall.SourceBase = tempDir
+			config.SourceBaseCall.SourceBase = "/path/to/sourcebase"
 		})
 
 		JustBeforeEach(func() {
 			pkgs, err = cache.List()
 		})
 
-		AfterEach(func() {
-			os.RemoveAll(tempDir)
-		})
-
-		Context("when there are no packages to list", func() {
-			It("succeeds", func() {
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("returns an empty slice", func() {
-				Expect(pkgs).To(BeEmpty())
-			})
-		})
-
-		Context("when there are packages to list", func() {
+		Context("when listing the files succeeds", func() {
 			BeforeEach(func() {
-				for _, pkg := range []string{"dopepkg", "dopelib"} {
-					pkgPath := filepath.Join(tempDir, pkg)
-					Expect(os.Mkdir(pkgPath, 0755)).To(Succeed())
-				}
+				fs.ListFilesCall.Returns.Filenames = []string{"dopepkg", "dopelib"}
 			})
 
 			It("succeeds", func() {
 				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("lists files in the source base directory", func() {
+				dirname := fs.ListFilesCall.Received.Dirname
+				Expect(dirname).To(Equal("/path/to/sourcebase"))
 			})
 
 			It("returns all packages in the cache", func() {
@@ -212,9 +183,9 @@ var _ = Describe("Cache", func() {
 			})
 		})
 
-		Context("when the source directory does not exist", func() {
+		Context("when there is an error listing the files", func() {
 			BeforeEach(func() {
-				Expect(os.Remove(tempDir)).To(Succeed())
+				fs.ListFilesCall.Returns.Err = errors.New("darn")
 			})
 
 			It("returns an error", func() {
@@ -224,55 +195,29 @@ var _ = Describe("Cache", func() {
 	})
 
 	Describe("Remove", func() {
-		var (
-			tempDir    string
-			sourcePath string
-			err        error
-		)
+		var err error
 
 		BeforeEach(func() {
-			var err error
-			tempDir, err = ioutil.TempDir("", "aurgo-cache-test-")
-			Expect(err).ToNot(HaveOccurred())
-
-			sourcePath = filepath.Join(tempDir, "dopepkg")
-			Expect(os.Mkdir(sourcePath, 0755)).To(Succeed())
-
-			helloPath := filepath.Join(sourcePath, "hello")
-			err = ioutil.WriteFile(helloPath, nil, 0644)
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		AfterEach(func() {
-			os.RemoveAll(tempDir)
+			config.SourcePathCall.Returns.Path = "/path/to/pkg"
 		})
 
 		JustBeforeEach(func() {
 			err = cache.Remove("dopepkg")
 		})
 
-		Context("when the source path exists", func() {
-			BeforeEach(func() {
-				config.SourcePathCall.Returns.Path = sourcePath
-			})
-
+		Context("when removing the package's source path succeeds", func() {
 			It("succeeds", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("removes the source path", func() {
-				Expect(sourcePath).ToNot(BeADirectory())
+			It("removes the correct directory", func() {
+				Expect(fs.RemoveAllCall.Received.Path).To(Equal("/path/to/pkg"))
 			})
 		})
 
-		Context("when the source path cannot be deleted", func() {
+		Context("when removign the package's source path fails", func() {
 			BeforeEach(func() {
-				Expect(os.Chmod(tempDir, 0000)).To(Succeed())
-				config.SourcePathCall.Returns.Path = sourcePath
-			})
-
-			AfterEach(func() {
-				os.Chmod(tempDir, 0755)
+				fs.RemoveAllCall.Returns.Err = errors.New("shoot")
 			})
 
 			It("returns an error", func() {

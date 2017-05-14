@@ -1,8 +1,6 @@
 package cache
 
 import (
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"sort"
 )
@@ -21,17 +19,24 @@ type SrcInfo interface {
 	Parse(input []byte) (Package, error)
 }
 
+type Filesystem interface {
+	ReadFile(path string) ([]byte, error)
+	ListFiles(dirname string) ([]string, error)
+	RemoveAll(path string) error
+}
+
 type Package struct {
 	Depends      []string
 	Checkdepends []string
 	Makedepends  []string
 }
 
-func New(config Config, git Git, srcinfo SrcInfo) Cache {
+func New(config Config, git Git, srcinfo SrcInfo, fs Filesystem) Cache {
 	return Cache{
 		config:  config,
 		git:     git,
 		srcinfo: srcinfo,
+		fs:      fs,
 	}
 }
 
@@ -39,6 +44,7 @@ type Cache struct {
 	config  Config
 	git     Git
 	srcinfo SrcInfo
+	fs      Filesystem
 }
 
 func (c Cache) Sync(pkg string) error {
@@ -57,7 +63,7 @@ func (c Cache) GetDeps(pkgname string) ([]string, error) {
 	sourcePath := c.config.SourcePath(pkgname)
 
 	srcinfoPath := filepath.Join(sourcePath, ".SRCINFO")
-	srcinfoBytes, err := ioutil.ReadFile(srcinfoPath)
+	srcinfoBytes, err := c.fs.ReadFile(srcinfoPath)
 	if err != nil {
 		return nil, err
 	}
@@ -86,16 +92,9 @@ func aggregateDeps(pkg Package) []string {
 
 func (c Cache) List() ([]string, error) {
 	sourceBase := c.config.SourceBase()
-
-	files, err := ioutil.ReadDir(sourceBase)
+	pkgs, err := c.fs.ListFiles(sourceBase)
 	if err != nil {
 		return nil, err
-	}
-
-	var pkgs []string
-
-	for _, file := range files {
-		pkgs = append(pkgs, file.Name())
 	}
 
 	sort.Strings(pkgs)
@@ -104,11 +103,5 @@ func (c Cache) List() ([]string, error) {
 
 func (c Cache) Remove(pkg string) error {
 	sourcePath := c.config.SourcePath(pkg)
-
-	err := os.RemoveAll(sourcePath)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.fs.RemoveAll(sourcePath)
 }
