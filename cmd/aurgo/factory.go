@@ -47,7 +47,7 @@ func (f *factory) getStderr() io.Writer {
 	return os.Stderr
 }
 
-func (f *factory) getFileSystem() chroot.Filesystem {
+func (f *factory) getFileSystem() sys.Filesystem {
 	return sys.NewFilesystem()
 }
 
@@ -76,7 +76,7 @@ func (f *factory) getSrcInfo() cache.SrcInfo {
 
 func (f *factory) getRepo() aurgo.Repo {
 	return logging.NewRepo(
-		cache.New(f.config, f.getGit(), f.getSrcInfo()),
+		cache.New(f.config, f.getGit(), f.getSrcInfo(), f.getFileSystem()),
 		f.getStdout(),
 	)
 }

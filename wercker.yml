@@ -11,3 +11,8 @@ build:
       name: go test
       code: |
         go test -v ./internal/...
+
+  - script:
+      name: go build
+      code: |
+        go build github.com/ooesili/aurgo/cmd/aurgo
