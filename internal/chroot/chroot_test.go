@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	. "github.com/ooesili/aurgo/internal/chroot"
+	"github.com/ooesili/aurgo/test/mocks"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,14 +14,14 @@ import (
 
 var _ = Describe("Chroot", func() {
 	var (
-		executor   *MockExecutor
-		filesystem *MockFilesystem
+		executor   *mocks.Executor
+		filesystem *mocks.Filesystem
 		chroot     Chroot
 	)
 
 	BeforeEach(func() {
-		executor = &MockExecutor{}
-		filesystem = &MockFilesystem{}
+		executor = &mocks.Executor{}
+		filesystem = &mocks.Filesystem{}
 		chroot = New(executor, filesystem)
 	})
 
@@ -135,54 +136,3 @@ var _ = Describe("Chroot", func() {
 		})
 	})
 })
-
-type MockExecutor struct {
-	ExecuteCall struct {
-		Received struct {
-			Command string
-			Args    []string
-		}
-		Returns struct {
-			Err error
-		}
-	}
-}
-
-func (m *MockExecutor) Execute(command string, args ...string) error {
-	m.ExecuteCall.Received.Command = command
-	m.ExecuteCall.Received.Args = args
-	return m.ExecuteCall.Returns.Err
-}
-
-type MockFilesystem struct {
-	ExistsCall struct {
-		Received struct {
-			Path string
-		}
-		Returns struct {
-			Exists bool
-			Err    error
-		}
-	}
-	MkdirAllCall struct {
-		Recieved struct {
-			Path string
-			Mode os.FileMode
-		}
-		Returns struct {
-			Err error
-		}
-	}
-}
-
-func (m *MockFilesystem) Exists(path string) (bool, error) {
-	m.ExistsCall.Received.Path = path
-	returns := m.ExistsCall.Returns
-	return returns.Exists, returns.Err
-}
-
-func (m *MockFilesystem) MkdirAll(path string, mode os.FileMode) error {
-	m.MkdirAllCall.Recieved.Path = path
-	m.MkdirAllCall.Recieved.Mode = mode
-	return m.MkdirAllCall.Returns.Err
-}

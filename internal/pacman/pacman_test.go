@@ -35,7 +35,7 @@ var _ = Describe("Pacman", func() {
 		Context("when the pacman command executes successfully", func() {
 			BeforeEach(func() {
 				stdout := bytes.NewBufferString(fixtureRealOutput)
-				executor.ExecuteCall.Returns.Stdout = stdout
+				executor.ExecuteCaptureCall.Returns.Stdout = stdout
 			})
 
 			It("succeeds", func() {
@@ -43,7 +43,7 @@ var _ = Describe("Pacman", func() {
 			})
 
 			It("executes the correct command", func() {
-				received := executor.ExecuteCall.Received
+				received := executor.ExecuteCaptureCall.Received
 				Expect(received.Command).To(Equal("pacman"))
 				Expect(received.Args).To(Equal([]string{"-Si"}))
 			})
@@ -66,7 +66,7 @@ var _ = Describe("Pacman", func() {
 
 		Context("when pacman fails to execute", func() {
 			BeforeEach(func() {
-				executor.ExecuteCall.Returns.Err = errors.New("dang")
+				executor.ExecuteCaptureCall.Returns.Err = errors.New("dang")
 			})
 
 			It("returns an error", func() {

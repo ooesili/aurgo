@@ -1,11 +1,11 @@
-package chroot_test
+package sys_test
 
 import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	. "github.com/ooesili/aurgo/internal/chroot"
+	. "github.com/ooesili/aurgo/internal/sys"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("Filesystem", func() {
 	var (
-		filesystem OSFilesystem
+		filesystem Filesystem
 		tempDir    string
 	)
 
@@ -22,7 +22,7 @@ var _ = Describe("Filesystem", func() {
 		tempDir, err = ioutil.TempDir("", "aurgo-test-filesystem-")
 		Expect(err).ToNot(HaveOccurred())
 
-		filesystem = NewOSFilesystem()
+		filesystem = NewFilesystem()
 	})
 
 	AfterEach(func() {

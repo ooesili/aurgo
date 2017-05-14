@@ -7,7 +7,7 @@ import (
 )
 
 type Executor interface {
-	Execute(command string, args ...string) (*bytes.Buffer, error)
+	ExecuteCapture(command string, args ...string) (*bytes.Buffer, error)
 }
 
 func New(executor Executor) Pacman {
@@ -21,7 +21,7 @@ type Pacman struct {
 }
 
 func (p Pacman) ListAvailable() ([]string, error) {
-	stdout, err := p.executor.Execute("pacman", "-Si")
+	stdout, err := p.executor.ExecuteCapture("pacman", "-Si")
 	if err != nil {
 		return nil, err
 	}

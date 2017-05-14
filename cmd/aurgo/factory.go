@@ -13,6 +13,7 @@ import (
 	"github.com/ooesili/aurgo/internal/logging"
 	"github.com/ooesili/aurgo/internal/pacman"
 	"github.com/ooesili/aurgo/internal/srcinfo"
+	"github.com/ooesili/aurgo/internal/sys"
 )
 
 func newFactory() (*factory, error) {
@@ -46,18 +47,15 @@ func (f *factory) getStderr() io.Writer {
 	return os.Stderr
 }
 
-func (f *factory) getChrootExecutor() chroot.Executor {
-	return newExecutorLogger(
-		chroot.NewOSExecutor(f.getStdout(), f.getStderr()),
-	)
-}
-
 func (f *factory) getFileSystem() chroot.Filesystem {
-	return chroot.NewOSFilesystem()
+	return sys.NewFilesystem()
 }
 
 func (f *factory) getBuildEnv() aurgo.BuildEnv {
-	return chroot.New(f.getChrootExecutor(), f.getFileSystem())
+	return chroot.New(
+		newExecutorLogger(f.getExecutor()),
+		f.getFileSystem(),
+	)
 }
 
 func (f *factory) getBuildManager() aurgo.BuildManager {
@@ -65,7 +63,7 @@ func (f *factory) getBuildManager() aurgo.BuildManager {
 }
 
 func (f *factory) getPkgManager() aurgo.PkgManager {
-	return pacman.New(pacman.NewOsExecutor())
+	return pacman.New(f.getExecutor())
 }
 
 func (f *factory) getGit() cache.Git {
@@ -100,4 +98,8 @@ func (f *factory) getDepWalker() aurgo.DepWalker {
 
 func (f *factory) getAurgo() aurgo.Aurgo {
 	return aurgo.New(f.getDepWalker(), f.getRepoCleaner(), f.config)
+}
+
+func (f *factory) getExecutor() sys.Executor {
+	return sys.NewExecutor(f.getStdout(), f.getStderr())
 }
