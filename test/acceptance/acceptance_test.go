@@ -17,6 +17,15 @@ var _ = Describe("Acceptance", func() {
 		fixture   string
 	)
 
+	runAurgo := func(args ...string) error {
+		cmd := exec.Command(aurgoBinary, args...)
+		return cmd.Run(
+			exec.Stdout(GinkgoWriter),
+			exec.Stderr(GinkgoWriter),
+			exec.Setenv("AURGOPATH", aurgoPath),
+		)
+	}
+
 	BeforeEach(func() {
 		tempBase, ok := os.LookupEnv("TMPDIR_BASE")
 		if !ok {
@@ -48,61 +57,30 @@ var _ = Describe("Acceptance", func() {
 			})
 
 			It("can download a PKGBUILD from the AUR", func() {
-				cmd := exec.Command(aurgoBinary, "sync")
-				err := cmd.Run(
-					exec.Stdout(GinkgoWriter),
-					exec.Stderr(GinkgoWriter),
-					exec.Setenv("AURGOPATH", aurgoPath),
-				)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(runAurgo("sync")).To(Succeed())
 
 				pkgbuildPath := filepath.Join(aurgoPath, "src", "xcape", "PKGBUILD")
 				Expect(pkgbuildPath).To(BeARegularFile())
 			})
 
 			It("can be run twice", func() {
-				cmd := exec.Command(aurgoBinary, "sync")
-				err := cmd.Run(
-					exec.Stdout(GinkgoWriter),
-					exec.Stderr(GinkgoWriter),
-					exec.Setenv("AURGOPATH", aurgoPath),
-				)
-				Expect(err).ToNot(HaveOccurred())
-
-				cmd = exec.Command(aurgoBinary, "sync")
-				err = cmd.Run(
-					exec.Stdout(GinkgoWriter),
-					exec.Stderr(GinkgoWriter),
-					exec.Setenv("AURGOPATH", aurgoPath),
-				)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(runAurgo("sync")).To(Succeed())
+				Expect(runAurgo("sync")).To(Succeed())
 
 				pkgbuildPath := filepath.Join(aurgoPath, "src", "xcape", "PKGBUILD")
 				Expect(pkgbuildPath).To(BeARegularFile())
 			})
 
 			It("can remove a package from the cache", func() {
-				cmd := exec.Command(aurgoBinary, "sync")
-				err := cmd.Run(
-					exec.Stdout(GinkgoWriter),
-					exec.Stderr(GinkgoWriter),
-					exec.Setenv("AURGOPATH", aurgoPath),
-				)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(runAurgo("sync")).To(Succeed())
 
 				xcapePath := filepath.Join(aurgoPath, "src", "xcape")
 				Expect(xcapePath).To(BeADirectory())
 
-				err = ioutil.WriteFile(repoYml, []byte(fixtureRepoYamlNoPackages), 0644)
+				err := ioutil.WriteFile(repoYml, []byte(fixtureRepoYamlNoPackages), 0644)
 				Expect(err).ToNot(HaveOccurred())
 
-				cmd = exec.Command(aurgoBinary, "sync")
-				err = cmd.Run(
-					exec.Stdout(GinkgoWriter),
-					exec.Stderr(GinkgoWriter),
-					exec.Setenv("AURGOPATH", aurgoPath),
-				)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(runAurgo("sync")).To(Succeed())
 
 				Expect(xcapePath).ToNot(BeADirectory())
 			})
@@ -114,13 +92,7 @@ var _ = Describe("Acceptance", func() {
 			})
 
 			It("downloads dependencies", func() {
-				cmd := exec.Command(aurgoBinary, "sync")
-				err := cmd.Run(
-					exec.Stdout(GinkgoWriter),
-					exec.Stderr(GinkgoWriter),
-					exec.Setenv("AURGOPATH", aurgoPath),
-				)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(runAurgo("sync")).To(Succeed())
 
 				yaourtPkgbuildPath := filepath.Join(aurgoPath, "src", "yaourt", "PKGBUILD")
 				Expect(yaourtPkgbuildPath).To(BeARegularFile())
@@ -135,13 +107,7 @@ var _ = Describe("Acceptance", func() {
 			})
 
 			It("downloads dependencies", func() {
-				cmd := exec.Command(aurgoBinary, "sync")
-				err := cmd.Run(
-					exec.Stdout(GinkgoWriter),
-					exec.Stderr(GinkgoWriter),
-					exec.Setenv("AURGOPATH", aurgoPath),
-				)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(runAurgo("sync")).To(Succeed())
 
 				ntkGitPkgbuildPath := filepath.Join(aurgoPath, "src", "ntk-git", "PKGBUILD")
 				Expect(ntkGitPkgbuildPath).To(BeARegularFile())
@@ -154,13 +120,7 @@ var _ = Describe("Acceptance", func() {
 			})
 
 			It("returns an error", func() {
-				cmd := exec.Command(aurgoBinary, "sync")
-				err := cmd.Run(
-					exec.Stdout(GinkgoWriter),
-					exec.Stderr(GinkgoWriter),
-					exec.Setenv("AURGOPATH", aurgoPath),
-				)
-				Expect(err).To(HaveOccurred())
+				Expect(runAurgo("sync")).NotTo(Succeed())
 
 				notFoundPackagePath := filepath.Join(
 					aurgoPath, "src", "totally-not-a-package-i-hope",
@@ -175,13 +135,7 @@ var _ = Describe("Acceptance", func() {
 			})
 
 			It("succesfully downloads the package", func() {
-				cmd := exec.Command(aurgoBinary, "sync")
-				err := cmd.Run(
-					exec.Stdout(GinkgoWriter),
-					exec.Stderr(GinkgoWriter),
-					exec.Setenv("AURGOPATH", aurgoPath),
-				)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(runAurgo("sync")).To(Succeed())
 
 				pkgbuildPath := filepath.Join(
 					aurgoPath, "src", "python-git-remote-dropbox-git", "PKGBUILD",
@@ -200,13 +154,7 @@ var _ = Describe("Acceptance", func() {
 	})
 
 	It("can create a build chroot", func() {
-		cmd := exec.Command(aurgoBinary, "mkchroot")
-		err := cmd.Run(
-			exec.Stdout(GinkgoWriter),
-			exec.Stderr(GinkgoWriter),
-			exec.Setenv("AURGOPATH", aurgoPath),
-		)
-		Expect(err).ToNot(HaveOccurred())
+		Expect(runAurgo("mkchroot")).To(Succeed())
 
 		pkgbuildPath := filepath.Join(
 			aurgoPath, "chroot", "root", ".arch-chroot",
